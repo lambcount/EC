@@ -1,3 +1,8 @@
+name = "EC"
+uuid = "4cfbaa9f-8677-4d18-8929-245666d433ff"
+authors = ["Tim Lämmerzahl <tim.laemmerzahl@uni-due.de>"]
+version = "0.1.0"
+
 [deps]
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
