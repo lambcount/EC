@@ -5,7 +5,7 @@ function cycle(voltage::Array{Any,1},cycle::Int64)
         _idx=findnext(x->x>= _voltage[1],_voltage,2)
         idx=findnext(x->x<= _voltage[1],_voltage,_idx+1)
 
-    elseif _voltage[1] < voltage[10]
+    elseif _voltage[1] < _voltage[10]
         _idx=findnext(x->x<= _voltage[1],_voltage,2)
         idx=findnext(x->x>= _voltage[1],_voltage,_idx+1)
     end
@@ -33,7 +33,7 @@ function cycle(voltage::Array{Any,1},current::Array{Any,1},cycle::Int64)
         _idx=findnext(x->x>= _voltage[1],_voltage,2)
         idx=findnext(x->x<= _voltage[1],_voltage,_idx+1)
 
-    elseif _voltage[1] < voltage[10]
+    elseif _voltage[1] < _voltage[10]
         _idx=findnext(x->x<= _voltage[1],_voltage,2)
         idx=findnext(x->x>= _voltage[1],_voltage,_idx+1)
     end
