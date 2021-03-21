@@ -418,4 +418,3 @@ Time - Voltage	Amplitude - Voltage
 20740	0.30125	
 20741	0.300921	
 20742	0.300921	
-j

@@ -4,6 +4,7 @@ authors = ["Tim Lämmerzahl <tim.laemmerzahl@uni-due.de>"]
 version = "0.1.0"
 
 [deps]
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"

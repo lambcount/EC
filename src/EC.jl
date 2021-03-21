@@ -1,12 +1,14 @@
 __precompile__()
 module EC
 
-using DelimitedFiles
+using DelimitedFiles,DataFrames
 
 include("./data.jl")
 include("./io.jl")
 
 export
     ec_grab,
-    cycle
+    ec_list,
+    cycle,
+    total_cycles
 end
