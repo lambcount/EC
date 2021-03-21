@@ -23,12 +23,22 @@ function ec_grab(measurement::AbstractString; dir::AbstractString = "./Data/EC")
         else
             idx_file = idxs[1]
 
-            if fileext[idx_file] == ".txt"
+            if fileext[idx_file] == ".csv"
+                data = readdlm(joinpath(dir,files[idx_file]))
+                _volt = data[:,1]
+                _curr = data[:,2]
+                    return _volt,_curr
+
+            elseif fileext[idx_file] == ".txt"
                 data = readdlm(joinpath(dir,files[idx_file]))
                 if typeof(data[1]) == String
-                    return data[:,1],data[:,2]
+                    _volt = data[:,1]
+                    _curr = data[:,2]
+                    return _volt,_curr
                 else
-                    return data[2:end,1],data[2:end,2]
+                    _volt = data[2:end,1]
+                    _curr = data[2:end,2]
+                    return _volt,_curr
                 end
             end
         end
