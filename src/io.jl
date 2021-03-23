@@ -14,8 +14,8 @@ function ec_grab(measurement::AbstractString; dir::AbstractString = "./Data/EC")
 
         dirs_files = readdir(dir,join=true)
         files = [dirs_files[i] for i in 1:length(dirs_files) if isdir(dirs_files[i]) == false]
-        filenames = first.(splitext.(last.(split.(files,"\\"))))
-        fileext = last.(splitext.(last.(split.(files,"\\"))))
+        filenames = first.(splitext.(last.(split.(files,'/'))))
+        fileext = last.(splitext.(last.(split.(files,'/'))))
 
         idxs = findall(x-> x==(_measurement),filenames)
 
