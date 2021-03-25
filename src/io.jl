@@ -50,7 +50,7 @@ end
 function ec_list(; dir::AbstractString = "./Data/EC")
     dirs_files = readdir(dir,join=true)
     files = [dirs_files[i] for i in 1:length(dirs_files) if isdir(dirs_files[i]) == false]
-    filenames = first.(splitext.(last.(split.(files,"\\"))))
+    filenames = first.(splitext.(last.(split.(files,'/'))))
     
     return DataFrame(Measurement = filenames)
 end
