@@ -31,9 +31,14 @@ function ec_grab(measurement::AbstractString; dir::AbstractString = "./Data/EC")
 
             if fileext[idx_file] == ".csv"
                 data = readdlm(files[idx_file])
+                if last(size(data)) > 1
                 _volt = data[:,1]
                 _curr = data[:,2]
                     return _volt,_curr
+                else
+                    _volt = data[:,1]
+                    return _volt
+                end
 
             elseif fileext[idx_file] == ".txt"
                 data = readdlm(files[idx_file])
