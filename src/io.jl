@@ -14,8 +14,18 @@ function ec_grab(measurement::AbstractString; dir::AbstractString = "./Data/EC")
 
         dirs_files = readdir(dir,join=true)
         files = [dirs_files[i] for i in 1:length(dirs_files) if isdir(dirs_files[i]) == false]
+<<<<<<< Updated upstream
         filenames = first.(splitext.(last.(split.(files,"\\"))))
         fileext = last.(splitext.(last.(split.(files,"\\"))))
+=======
+        if Sys.isapple() == true
+            filenames = first.(splitext.(last.(split.(files,'/'))))
+            fileext = last.(splitext.(last.(split.(files,'/'))))
+        elseif Sys.iswindows() == true
+            filenames = first.(splitext.(last.(split.(files,"\\"))))
+            fileext = last.(splitext.(last.(split.(files,"\\"))))
+        end
+>>>>>>> Stashed changes
 
         idxs = findall(x-> x==(_measurement),filenames)
 
@@ -50,7 +60,15 @@ end
 function ec_list(; dir::AbstractString = "./Data/EC")
     dirs_files = readdir(dir,join=true)
     files = [dirs_files[i] for i in 1:length(dirs_files) if isdir(dirs_files[i]) == false]
+<<<<<<< Updated upstream
     filenames = first.(splitext.(last.(split.(files,"\\"))))
+=======
+    if Sys.isapple() == true
+        filenames = first.(splitext.(last.(split.(files,'/'))))
+    elseif Sys.iswindows() == true
+        filenames = first.(splitext.(last.(split.(files,"\\"))))
+    end
+>>>>>>> Stashed changes
     
     return DataFrame(Measurement = filenames)
 end
