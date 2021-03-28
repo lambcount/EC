@@ -1,4 +1,4 @@
-function idx_cycle(voltage::Array{Any,1})
+function idx_cycle(voltage)
 
     _voltage = voltage .+1000
     if _voltage[1] > _voltage[10]
@@ -12,7 +12,7 @@ function idx_cycle(voltage::Array{Any,1})
     return idx
 end
 
-function cycle(voltage::Array{Any,1},cycle::Int64) 
+function cycle(voltage,cycle::Int64) 
 
     idx = idx_cycle(voltage)
     total_cycle = round(length(voltage)/idx) |> Int
@@ -31,7 +31,7 @@ cycle(voltage::Array{Any,1},current::Array{Any,1},cycle::Int64)
 
 Return the Input voltage and current Arrays for the given cycle argument.
 """
-function cycle(voltage::Array{Any,1},current::Array{Any,1},cycle::Int64)
+function cycle(voltage,current,cycle::Int64)
 
     idx = idx_cycle(voltage)
     total_cycle = round(length(voltage)/idx) |> Int
@@ -52,7 +52,7 @@ total_cycles(voltage::Array{Number,1})
 
 Returns the total number of full cycles in voltage.
 """
-function total_cycles(voltage::Array{Any,1})
+function total_cycles(voltage)
 
     idx = idx_cycle(voltage)
     total_cycle = round(length(voltage)/idx) |> Int

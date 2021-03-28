@@ -14,8 +14,13 @@ function ec_grab(measurement::AbstractString; dir::AbstractString = "./Data/EC")
 
         dirs_files = readdir(dir,join=true)
         files = [dirs_files[i] for i in 1:length(dirs_files) if isdir(dirs_files[i]) == false]
-        filenames = first.(splitext.(last.(split.(files,'/'))))
-        fileext = last.(splitext.(last.(split.(files,'/'))))
+        if Sys.isapple() == true
+            filenames = first.(splitext.(last.(split.(files,'/'))))
+            fileext = last.(splitext.(last.(split.(files,'/'))))
+        elseif Sys.iswindows() == true
+            filenames = first.(splitext.(last.(split.(files,"\\"))))
+            fileext = last.(splitext.(last.(split.(files,"\\"))))
+        end
 
         idxs = findall(x-> x==(_measurement),filenames)
 
@@ -26,9 +31,14 @@ function ec_grab(measurement::AbstractString; dir::AbstractString = "./Data/EC")
 
             if fileext[idx_file] == ".csv"
                 data = readdlm(files[idx_file])
+                if last(size(data)) > 1
                 _volt = data[:,1]
                 _curr = data[:,2]
                     return _volt,_curr
+                else
+                    _volt = data[:,1]
+                    return _volt
+                end
 
             elseif fileext[idx_file] == ".txt"
                 data = readdlm(files[idx_file])
@@ -57,7 +67,11 @@ function ec_list(;   dir::AbstractString = "./Data/EC",
                     
     dirs_files = readdir(dir,join=true)
     files = [dirs_files[i] for i in 1:length(dirs_files) if isdir(dirs_files[i]) == false]
-    filenames = first.(splitext.(last.(split.(files,"\\"))))
+    if Sys.isapple() == true
+        filenames = first.(splitext.(last.(split.(files,'/'))))
+    elseif Sys.iswindows() == true
+        filenames = first.(splitext.(last.(split.(files,"\\"))))
+    end
     
     return DataFrame(Measurement = filenames)
 end
