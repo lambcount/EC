@@ -144,11 +144,6 @@ function get_steps(team::Int64,project::Int64,experiment::Int64,task::Int64,prot
         resp=HTTP.request("GET",server_name_home*"/api/v1/teams/$(team)/projects/$(project)/experiments/$(experiment)/tasks/$(task)/protocols/$(protocol)/steps",header)
         body = String(resp.body)
         data=JSON.parse(body)["data"]
-        #df = DataFrame()
-        #df.Names  = [data[i]["attributes"]["name"] for i in 1:length(data)]
-        #df.Comment = [data[i]["attributes"]["description"] for i in 1:length(data)]
-        #return df
-
     end
 end
 
@@ -162,11 +157,11 @@ function get_step_table(team::Int64,project::Int64,experiment::Int64,task::Int64
         resp=HTTP.request("GET",server_name_home*"/api/v1/teams/$(team)/projects/$(project)/experiments/$(experiment)/tasks/$(task)/protocols/$(protocol)/steps/$(step)/tables",header)
         body = String(resp.body)
         data=JSON.parse(JSON.parse(body)["data"][1]["attributes"]["contents"])["data"]
-        df = DataFrame()
-            df.Parameter = [data[i][1] for i in 1:length(data) if data[i][1] !== nothing]
-            df.Values = [data[i][2] for i in 1:length(data) if data[i][1] !== nothing]
-            df.Uni = [data[i][3] for i in 1:length(data) if data[i][1] !== nothing]
 
-            return df
+        param_names = [data[i][1] for i in 1:length(data) if data[i][1] !== nothing]
+        param_values = [data[i][2] for i in 1:length(data) if data[i][1] !== nothing]
+        param_units = [data[i][3] for i in 1:length(data) if data[i][1] !== nothing]
+
+            return param_names,param_values,param_units
     end
 end

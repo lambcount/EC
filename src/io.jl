@@ -1,3 +1,4 @@
+import Base: findall
 """
     ec_grab(measurement::AbstractString; dir::AbstractString = "./Data/EC")
 
@@ -72,11 +73,45 @@ function ec_list(;   dir::AbstractString = "./Data/EC",
     elseif Sys.iswindows() == true
         filenames = first.(splitext.(last.(split.(files,"\\"))))
     end
+
+    if scinote == true
+    end
+
+
+
     
     return DataFrame(Measurement = filenames)
 end
 
+"""
+Findall for finding substrings in strings.
+"""
+function findall(t::Union{AbstractString,Regex}, s::AbstractString; overlap::Bool=false)
+    found = UnitRange{Int}[]
+    i, e = firstindex(s), lastindex(s)
+    while true
+        r = findnext(t, s, i)
+        isnothing(r) && return found
+        push!(found, r)
+        j = overlap || isempty(r) ? first(r) : last(r)
+        j > e && return found
+        @inbounds i = nextind(s, j)
+    end
+end
 
+function step_names_params(team::Int64,project::Int64,experiment::Int64,task::Int64,protocol::Int64)
+    data = get_steps(team::Int64,project::Int64,experiment::Int64,task::Int64,protocol::Int64)
+    step_ids = [parse(Int,data[i]["id"]) for i in 1:length(data)]
+    comments = [comment2measurement(html2string(data[i]["attributes"]["description"])) for i in 1:length(data)]
+    params = [get_step_table(team,project,experiment,task,protocol,step_ids[i]) for i in 1:length(step_ids)]
+    df = DataFrame()
+        df.Names  = [data[i]["attributes"]["name"] for i in 1:length(data)]
+        df.Scan_Rate = [params[i][2] for i in 1:length(params)]
+        df.Pump = [params[i][2] for i in 1:length(params)]
+        df.Comment  
+
+    
+end
 """
     html2string(html)
 
