@@ -1,3 +1,4 @@
+using Gumbo
 import Base: findall
 """
     ec_grab(measurement::AbstractString; dir::AbstractString = "./Data/EC")
@@ -83,21 +84,6 @@ function ec_list(;   dir::AbstractString = "./Data/EC",
     return DataFrame(Measurement = filenames)
 end
 
-"""
-Findall for finding substrings in strings.
-"""
-function findall(t::Union{AbstractString,Regex}, s::AbstractString; overlap::Bool=false)
-    found = UnitRange{Int}[]
-    i, e = firstindex(s), lastindex(s)
-    while true
-        r = findnext(t, s, i)
-        isnothing(r) && return found
-        push!(found, r)
-        j = overlap || isempty(r) ? first(r) : last(r)
-        j > e && return found
-        @inbounds i = nextind(s, j)
-    end
-end
 
 function step_names_params(team::Int64,project::Int64,experiment::Int64,task::Int64,protocol::Int64)
     data = get_steps(team::Int64,project::Int64,experiment::Int64,task::Int64,protocol::Int64)
@@ -117,17 +103,10 @@ end
 
 Convert a html to a normal String.
 """
-function html2string(html)
-    div_start = "<div>"
-    div_end = "</div>"
-    space = "&nbsp;"
-    
-    _str = replace(html,div_start=>"") 
-    _str = replace(_str,div_end=>"") 
-    _str = replace(_str,space=>"") 
-            
-    return _str
-    
+function html2string(html_raw)
+    html_parsed = parsehtml(html_raw)
+    s = text(html_parsed.root)
+
 end
 
 """
@@ -137,41 +116,45 @@ Extract Measurment and other comments from string.
 function comment2measurement(str)
 
     _idx = findall(x-> isspace(x)==true,str)
+    _idx_s =[_idx[i] for i in 2:length(_idx) if _idx[i] !== _idx[i-1]+1]
+
+    regex = r"(\w*|$)(?:[ ]{2,})"
+
 
     if isempty(_idx)==true
         measurement = str
-        pump = ""
-        rest = ""
+        pump = "Pump: n/a"
+        rest = "comment n/a"
         return measurement,pump,rest
     else
-        idx_start=[1;[i for i in 2:length(str) if (isprint(str[i]) == true) && (isspace(str[i-1])==true)]]
-        idx_end=[[i for i in 1:length(str)-1 if (isprint(str[i]) == true) && (isspace(str[i+1])==true)];length(str)]
-
-        if length(idx_start) == 1
-
-            measurement = str[idx_start[1]:idx_end[1]]
-            pump = ""
-            rest= ""
-
-            return measurement,pump,rest
-
-        elseif length(idx_divs) == 2
-
-            measurement = str[idx_start[1]:idx_end[1]]
-            pump = str[idx_start[2]:idx_end[2]]
-            rest = ""
+        if length(_idx_s) == 0
+            matches = collect(eachmatch(regex,str))
+            measurement = first(matches).captures[1]
+            second = last(matches)
+            if occursin("pump",lowercase(str))== true
+                pump = "Pump: "* second.captures[1]
+            else            
+                pump = second.captures[1]
+            end
+            rest= "comment n/a"
 
             return measurement,pump,rest
 
-        elseif length(idx_divs) > 2
+        elseif length(_idx_s) >= 1
+            regex2 = r"(?:[ ]{2,})(.*)"
 
-            measurement = str[idx_start[1]:idx_end[1]]
-            pump = str[idx_start[2]:idx_end[2]]
-            rest = str[idx_start[3]:end]
+            matches = collect(eachmatch(regex,str))
+            measurement = first(matches).captures[1]
+            second = last(matches)
+            if occursin("pump",lowercase(str))== true
+                pump = "Pump: "* second.captures[1]
+            else            
+                pump = second.captures[1]
+            end
+            rest =  match(regex2,str[second.offset+length(second.captures[1]):end]).captures[1]
 
             return measurement,pump,rest
         end
-
     end
 
 end
