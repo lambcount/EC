@@ -10,5 +10,7 @@ export
     ec_grab,
     ec_list,
     cycle,
-    total_cycles
+    total_cycles,
+    get_measurement,
+    get_params
 end
