@@ -5,7 +5,7 @@ using DelimitedFiles,DataFrames
 
 include("./data.jl")
 include("./io.jl")
-include("./struct.jl")
+#include("./struct.jl")
 
 export
     Measurement,
@@ -15,5 +15,6 @@ export
     total_cycles,
     get_measurement,
     get_params,
-    get_curr_range,
+    #get_curr_range,
+
 end
