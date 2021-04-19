@@ -144,13 +144,13 @@ e.g.
     julia> get_measurement("./EC-CV.h5")
     "CV"
 """
-#function get_curr_range(file::AbstractString)
-#    _measurement = get_measurement(file)
-#
-#    _curr_range =  h5open(file) do fid
-#        read(HDF5.attributes(fid[_measurement]["Data"])["Current Range [A]"])   
-#    end
-#end
+function get_curr_range(file::AbstractString)
+    _measurement = get_measurement(file)
+
+    _curr_range =  h5open(file) do fid
+        read(HDF5.attributes(fid[_measurement]["Data"])["Current Range [A]"])   
+    end
+end
 
 
 """
