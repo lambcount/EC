@@ -21,7 +21,7 @@ You can also grab the DataFrame from ec_list(). Be sure that the experiments in 
     
     julia>v=ec_grab(ec_list(measurement="CV"))
 """
-function ec_grab(measurement::AbstractString; dir::AbstractString = "./Data/Electrochemistry_Data/")
+function ec_grab(measurement::AbstractString; dir::AbstractString = "./Data/EC")
     if occursin("EC-",measurement) == false
         _measurement = "EC-"*measurement
     else
@@ -116,7 +116,12 @@ function ec_grab(df::DataFrame)
         end
     else
         error("The Files you selected in ec_list() are not compatible.")
-    end    
+    end
+    
+
+    
+
+    
 end
 
 
@@ -133,22 +138,6 @@ function get_measurement(file::AbstractString)
 
     _measurement =  h5open(file) do fid
         keys(fid)[1]
-    end
-end
-
-"""
-Check the current range of  CV or Charge measurement(.h5 file).
-    get_curr_range(file::AbstractString)
-
-e.g.
-    julia> get_measurement("./EC-CV.h5")
-    "CV"
-"""
-function get_curr_range(file::AbstractString)
-    _measurement = get_measurement(file)
-
-    _curr_range =  h5open(file) do fid
-        read(HDF5.attributes(fid[_measurement]["Data"])["Current Range [A]"])   
     end
 end
 
@@ -248,7 +237,7 @@ e.g.\t\n
    ─────┼─────────────────────────────────────────────────────────────────\n
       1 │ EC-test_CV  CV           50.0      ./test/Data/EC/EC-test_CV.h5
 """
-function ec_list(;   dir::AbstractString = "./Data/Electrochemistry_Data/ ",
+function ec_list(;   dir::AbstractString = "./test/Data/EC",
                      inexact::AbstractString  = "",
                      measurement::AbstractString = "",
                      scan_rate = missing ,
