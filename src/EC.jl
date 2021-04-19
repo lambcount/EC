@@ -12,5 +12,6 @@ export
     cycle,
     total_cycles,
     get_measurement,
-    get_params
+    get_params,
+    get_curr_range
 end

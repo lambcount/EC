@@ -141,6 +141,22 @@ function get_measurement(file::AbstractString)
     end
 end
 
+"""
+Check if current range from CV or CM measurment(.h5 file).
+    get_curr_range(file::AbstractString)
+
+e.g.
+    julia> get_curr_range("./EC-CV.h5")
+    1e-6
+"""
+function get_curr_range(file::AbstractString)
+    _measurement = get_measurement(file)
+
+    _curr_range =  h5open(file) do fid
+        HDF5.attributes(fid[_measurement]["Data"])["Current Range [A]"] |> read
+    end
+end
+
 
 """
 Get Parameters from h5.file
