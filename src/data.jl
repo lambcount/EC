@@ -65,12 +65,12 @@ end
 
 
 """Returns the anodic and cathodic current at the given potential value (val).Works only if c and v consist of only one cycle. For Value you can put any potential in the scan range.
-    get_eq_anodickathodicpotentials(v,c,val)
+get_eq_anodickathodiccurrents(v,c,val)
 
-julia> get_eq_anodickathodicpotentials(v_cycle1[1],c_cycle1[1],-0.03)
+julia> get_eq_anodickathodiccurrents(v_cycle1[1],c_cycle1[1],-0.03)
     (-1.3481340532268844, 0.9398593965871291)
 """
-function get_eq_anodickathodicpotentials(v,c,val)
+function get_eq_anodickathodiccurrents(v,c,val)
     idx_1,idx_2 = get_ind_eq_anodickathodicpotentials(v,c,val)
 
     val_p1 = v[idx_1]
