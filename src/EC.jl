@@ -14,6 +14,6 @@ export
     get_measurement,
     get_params,
     get_curr_range,
-    get_eq_anodickathodicpotentials,
+    get_eq_anodickathodiccurrents,
     get_ind_eq_anodickathodicpotentials
 end
