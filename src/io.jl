@@ -139,6 +139,12 @@ function get_measurement(file::AbstractString)
     _measurement =  h5open(file) do fid
         keys(fid)[1]
     end
+
+    #if occursin("CV", _measurement) == true
+    #    measurement = "CV"
+    #else
+    #    measurement = _measurement
+    #end
 end
 
 """
@@ -173,7 +179,9 @@ e.g.
 """
 function get_params(file::AbstractString)
     _measurement =get_measurement(file)
-    if _measurement == "CV"
+
+    
+    if match(r"\D+",_measurement).match == "CV"
 
         attributes = [
             "Sample Rate [Hz]",
@@ -183,9 +191,19 @@ function get_params(file::AbstractString)
             "Bandwidth Filter [Hz]"
         ]
 
-        values = [HDF5.attributes(h5open(file)["CV"]["Data"])[attributes[i]] |> read for i in 1:length(attributes)]
+        values = try [HDF5.attributes(h5open(file)["CV"]["Data"])[attributes[i]] |> read for i in 1:length(attributes)] catch end
+
+        if isnothing(values) == true
+            _add_attributes = [
+                "A Potential [mV]",
+                "B Potential [mV]"
+            ]
+            append!(attributes,_add_attributes)
+            values = [HDF5.attributes(h5open(file))[attributes[i]] |> read for i in 1:length(attributes)]
+        end
+
         close(h5open(file))
-        return [attributes values]
+        return Dict(attributes[i] => values[i] for i in 1:length(values))
         
 
     elseif _measurement == "OCP"
@@ -195,7 +213,7 @@ function get_params(file::AbstractString)
         value = HDF5.attributes(h5open(file)["OCP"]["Data"])[attribute] |> read
         close(h5open(file))
 
-        return [attribute value]
+        return Dict(attribute[i] => value[i] for i in 1:length(value))
 
     end
 
@@ -271,9 +289,11 @@ function ec_list(;   dir::AbstractString = "./test/Data/EC",
         filetype = last.(splitext.(last.(split.(files,"\\"))))
     end
 
-    measurements = [filetype[i] == ".h5" ? get_measurement(files[i]) : "n/A" for i in 1:length(files)]
-    scan_rates = [(filetype[i] == ".h5" && get_measurement(files[i]) == "CV") ? get_params(files[i])[2,2] : "n/A" for i in 1:length(files)]
-    _df = DataFrame(Filename = filenames, Measurement = measurements, ScanRate= scan_rates, Path=files)
+    measurements = [filetype[i] == ".h5" ? match(r"\D+",get_measurement(files[i])).match : "n/A" for i in 1:length(files)]
+    scan_rates = [(filetype[i] == ".h5" && (match(r"\D+",get_measurement(files[i])).match == "CV")) ? get_params(files[i])["Scan Rate [mV/s]"] : "n/A" for i in 1:length(files)]
+    start_potential = [(filetype[i] == ".h5" && (try get_params(files[i])["A Potential [mV]"] catch end) !== nothing) ? get_params(files[i])["A Potential [mV]"] : "n/A" for i in 1:length(files)]
+    end_potential = [(filetype[i] == ".h5" && (try get_params(files[i])["B Potential [mV]"] catch end) !== nothing) ? get_params(files[i])["B Potential [mV]"] : "n/A" for i in 1:length(files)]
+    _df = DataFrame(Filename = filenames, Measurement = measurements, ScanRate= scan_rates, A_Potential = start_potential, B_Potential = end_potential, Path=files)
 
    if show_na == false
         _df=_df[(_df.Measurement .!== "n/A"),:]
@@ -304,4 +324,5 @@ function ec_list(;   dir::AbstractString = "./test/Data/EC",
 
 end
 
-    
+
+
