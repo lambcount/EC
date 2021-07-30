@@ -11,7 +11,6 @@ export
     ec_list,
     cycle,
     total_cycles,
-    get_measurement,
     get_params,
-    get_curr_range
+    idx_cycle
 end

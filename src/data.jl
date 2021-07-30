@@ -9,8 +9,11 @@ function idx_cycle(voltage)
         _idx=findnext(x->x<= _voltage[1],_voltage,2)
         idx=findnext(x->x>= _voltage[1],_voltage,_idx+1)
     end
-    return idx
+    return idx+5
 end
+
+
+
 
 function cycle(voltage,cycle::Int64) 
 
