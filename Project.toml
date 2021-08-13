@@ -1,7 +1,7 @@
 name = "EC"
 uuid = "4cfbaa9f-8677-4d18-8929-245666d433ff"
 authors = ["Tim Lämmerzahl <tim.laemmerzahl@uni-due.de>"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
