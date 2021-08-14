@@ -5,6 +5,7 @@ using DelimitedFiles,DataFrames
 
 include("./data.jl")
 include("./io.jl")
+include("./scinote.jl")
 
 export
     ec_grab,
@@ -12,5 +13,6 @@ export
     cycle,
     total_cycles,
     get_params,
-    idx_cycle
+    idx_cycle,
+    post_plot
 end

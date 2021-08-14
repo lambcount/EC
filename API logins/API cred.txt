@@ -1,0 +1,5 @@
+name: "Titus client",
+ uid: "mp1YyqtADkI8wHqbRyAEsqdr3hALhjRqYgsw5T5snM8",
+ secret: "mmtmPd9ctROk83hKk21qECDTtlwzsbhMF7pHob601LY",
+ redirect_uri: "",
+ scopes: "",

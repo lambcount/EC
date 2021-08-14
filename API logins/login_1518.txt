@@ -1,0 +1,9 @@
+id: 2,
+ name: "Tituts",
+ uid: "nscSWS1XXJM3GTrlOr8X3tFcyAL0zczvQ3sxM86j8tY",
+ secret: "fpRk_XFk27mo00z9esDPA3s5nHsj4DdFsq-R-iMy9ho",
+ redirect_uri: "",
+ scopes: "",
+ confidential: true,
+ created_at: Mon, 29 Mar 2021 13:17:20.235612594 UTC +00:00,
+ updated_at: Mon, 29 Mar 2021 13:17:20.235612594 UTC +00:00>
