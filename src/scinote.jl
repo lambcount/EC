@@ -1,4 +1,5 @@
-using HTTP,JSON,DataFrames,Base64,Sockets
+using HTTP,JSON,Base64,Sockets
+import Plots.savefig
 
 const SCINOTE_URL = "http://titus.phchem.uni-due.de:3000"
 const client_id = "7vJ_9ypiSlFDLyWYoF_TGpceceDPxXFDnF01Wp3HPMo"
@@ -11,6 +12,10 @@ const password = "1a2s3d4f"
 const email = "tim.laemmerzahl@uni-due.de"
 const DNS_uni_due = ip"132.252.3.10"
 token_header = ["Content-Type" => "application/json"]
+header(token) = Dict(
+    "Content-Type" => "application/json",
+    "Authorization" => "Bearer $token"
+)
 
 """
     check_vpn()
@@ -31,7 +36,7 @@ end
 Returns if the API is running. 
 """
 function api_running()
-    if check_vpn == true
+    if check_vpn() == true
 
         r = HTTP.request("GET",SCINOTE_URL*"/api/health")
         resp = String(r.body)
@@ -70,15 +75,6 @@ token_params = Dict(
     "password" => password
 )
 
-
-token_tim = token()["access_token"]
-header(token) = Dict(
-    "Content-Type" => "application/json",
-    "Authorization" => "Bearer $token"
-)
-
-
-
 """
     get_teams()
 This function retrieves all teams and their IDs the user is member of.  
@@ -103,7 +99,7 @@ end
     get_projects(team::Int64)
 This function retrieves all projects and their IDs from the AK Hasselbrink team.
 """
-function get_projects(team)
+function get_projects(token_tim,team)
     if api_running() == true 
         resp=HTTP.request("GET",SCINOTE_URL*"/api/v1/teams/$(team)/projects",header(token_tim))
         body = String(resp.body)
@@ -117,7 +113,7 @@ end
     get_experiments(project::Int64,team::Int64)
 This function retrieves all experiments and their IDs from the specified project
 """
-function get_experiments(team,project)
+function get_experiments(token_tim,team,project)
     if api_running() == true 
         resp=HTTP.request("GET",SCINOTE_URL*"/api/v1/teams/$(team)/projects/$(project)/experiments",header(token_tim))
         body = String(resp.body)
@@ -131,7 +127,7 @@ end
     get_tasks(team::Int64,project::Int64,experiment::Int64)
 This function retrieves all tasks and theis IDs from a specific experiment. 
 """
-function get_tasks(team,project,experiment;show_archived= false)
+function get_tasks(token_tim,team,project,experiment;show_archived= false)
     if api_running() == true 
         resp=HTTP.request("GET",SCINOTE_URL*"/api/v1/teams/$(team)/projects/$(project)/experiments/$(experiment)/tasks",header(token_tim))
         body = String(resp.body)
@@ -152,7 +148,7 @@ end
     get_protocols(team::Int64,project::Int64,experiment::Int64,task::Int64)
 This function retrieves all protocols and their IDs from a specific experiment. 
 """
-function get_protocols(team,project,experiment,task)
+function get_protocols(token_tim,team,project,experiment,task)
     if api_running() == true 
         resp=HTTP.request("GET",SCINOTE_URL*"/api/v1/teams/$(team)/projects/$(project)/experiments/$(experiment)/tasks/$(task)/protocols",header(token_tim))
         body = String(resp.body)
@@ -169,7 +165,7 @@ end
     get_steps(team::Int64,project::Int64,experiment::Int64,task::Int64,protocol::Int64)
 This function retrieves all steps and their IDs from a specific protocol. 
 """
-function get_steps(team,project,experiment,task,protocol)
+function get_steps(token_tim,team,project,experiment,task,protocol)
     if api_running() == true 
         resp=HTTP.request("GET",SCINOTE_URL*"/api/v1/teams/$(team)/projects/$(project)/experiments/$(experiment)/tasks/$(task)/protocols/$(protocol)/steps",header(token_tim))
         body = String(resp.body)
@@ -208,14 +204,17 @@ Only works for Experiments in:
     AK Hasselbrink -> FemtoLab -> Spectroelectrochemistry
 """
 function post_plot(plot,experiment::AbstractString)
+
+    token_tim = token()["access_token"]
+
     regex = r"(?:-)((\d|\w)*)"
     task_match = match(regex,experiment)
     task_name = task_match.captures[1]
     if api_running() == true 
 
-        task_id = get_tasks(team_id,project_id_femto_lab,experiment_id_SEC)[task_name]
-        protocol_id = get_protocols(team_id,project_id_femto_lab,experiment_id_SEC,task_id)[1]
-        step_id = get_steps(team_id,project_id_femto_lab,experiment_id_SEC,task_id,protocol_id)[experiment]
+        task_id = get_tasks(token_tim,team_id,project_id_femto_lab,experiment_id_SEC)[task_name]
+        protocol_id = get_protocols(token_tim,team_id,project_id_femto_lab,experiment_id_SEC,task_id)[1]
+        step_id = get_steps(token_tim,team_id,project_id_femto_lab,experiment_id_SEC,task_id,protocol_id)[experiment]
 
         savefig(plot,"./tmp.png")
         file_data = open("./tmp.png") do io
@@ -240,5 +239,6 @@ function post_plot(plot,experiment::AbstractString)
         )
         body = String(resp.body)
         data=JSON.parse(body)["data"]
+        url = data["attributes"]["file_url"]
    end
 end
