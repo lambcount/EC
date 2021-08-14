@@ -205,13 +205,12 @@ Only works for Experiments in:
 """
 function post_plot(plot,experiment::AbstractString; name = experiment::AbstractString)
 
-    token_tim = token()["access_token"]
 
     regex = r"(?:-)((\d|\w)*)"
     task_match = match(regex,experiment)
     task_name = task_match.captures[1]
     if api_running() == true 
-
+        token_tim = token()["access_token"]
         task_id = get_tasks(token_tim,team_id,project_id_femto_lab,experiment_id_SEC)[task_name]
         protocol_id = get_protocols(token_tim,team_id,project_id_femto_lab,experiment_id_SEC,task_id)[1]
         step_id = get_steps(token_tim,team_id,project_id_femto_lab,experiment_id_SEC,task_id,protocol_id)[experiment]
