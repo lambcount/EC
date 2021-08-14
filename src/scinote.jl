@@ -198,12 +198,12 @@ end
 
 
 """
-    post_plot(plot::Plots.Plot{Plots},experiment::AbstractString)
-Post the plot on SciNote as an Attachement in the specified experiment. \n
+    post_plot(plot::Plots.Plot{Plots},experiment::AbstractString; name = experiment)
+Post the plot on SciNote as an Attachement in the specified experiment. If you dont specify name the name will be the same as experiment \n
 Only works for Experiments in:
     AK Hasselbrink -> FemtoLab -> Spectroelectrochemistry
 """
-function post_plot(plot,experiment::AbstractString)
+function post_plot(plot,experiment::AbstractString; name = experiment::AbstractString)
 
     token_tim = token()["access_token"]
 
@@ -226,7 +226,7 @@ function post_plot(plot,experiment::AbstractString)
             Dict(
                 "data"=> Dict(
                     "attributes"=> Dict(
-                        "file_name" => "$experiment.png", 
+                        "file_name" => "$name.png", 
                         "file_type" => "image/png",
                          "file_data" => file_data
                         ),
