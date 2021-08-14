@@ -1,37 +1,47 @@
-using HTTP,JSON,DataFrames
+using HTTP,JSON,DataFrames,Base64,Sockets
 
 const SCINOTE_URL = "http://titus.phchem.uni-due.de:3000"
 const client_id = "7vJ_9ypiSlFDLyWYoF_TGpceceDPxXFDnF01Wp3HPMo"
 const client_secret = "RJkDV5Lc5ShILMXN2UiTFPnDw-nV1yT3xaPBGXB7w18"
-const redirect_uri = ""
-const team_id = "AK Hasselbrink"
+const team_name = "AK Hasselbrink"
+const team_id = "2"
 const project_id_femto_lab = "9"
 const experiment_id_SEC = "53"
-const task_id_EC = "297"
 const password = "1a2s3d4f"
 const email = "tim.laemmerzahl@uni-due.de"
+const DNS_uni_due = ip"132.252.3.10"
 token_header = ["Content-Type" => "application/json"]
 
-
 """
-Returns the Status of the Scinote API
+    check_vpn()
+Checks whether you are connected to the university network or not.
 """
-function api_status()
-    r = HTTP.request("GET",SCINOTE_URL*"/api/status",header)
-    JSON.parse(String(r.body))
+function check_vpn()
+    n = length(Sockets.getalladdrinfo(Sockets.getnameinfo(DNS_uni_due)))
+    if n > 1
+        true
+    else 
+        false
+    end
 end
+
 
 """
     api_running()
 Returns if the API is running. 
 """
 function api_running()
-    r = HTTP.request("GET",SCINOTE_URL*"/api/health")
-    resp = String(r.body)
-    if (resp == "RUNNING") == true
-        return true
+    if check_vpn == true
+
+        r = HTTP.request("GET",SCINOTE_URL*"/api/health")
+        resp = String(r.body)
+        if (resp == "RUNNING") == true
+            return true
+        else
+            error("The API seems not to be running. Get Request returns $(resp)")
+        end
     else
-        error("The API seems not to be running. Get Request returns $(resp)")
+        error("It seems you are not connected to the Uni-Due Network. Use the VPN. Or Tim fucked up.")
     end
 end
 
@@ -71,7 +81,7 @@ header(token) = Dict(
 
 """
     get_teams()
-This function retrieves all teams user is member of.   
+This function retrieves all teams and their IDs the user is member of.  
 """
 function get_all_teams()
     if api_running() == true 
@@ -81,8 +91,8 @@ function get_all_teams()
         body = String(r.body)
         _body = JSON.parse(body)
         n_teams = length(_body["data"])
-
-        teams = Dict("name" =>_body["data"][i]["attributes"]["name"],"id" => _body["data"][i]["id"] for i in 1:n_teams)
+        teams = Dict(_body["data"][i]["attributes"]["name"] => _body["data"][i]["id"] for i in 1:n_teams)
+       
     end
 end
 
@@ -91,81 +101,144 @@ end
 
 """
     get_projects(team::Int64)
-This function retrieves all projects from the AK Hasselbrink team.
+This function retrieves all projects and their IDs from the AK Hasselbrink team.
 """
-function get_projects(team::Int64)
+function get_projects(team)
     if api_running() == true 
-        resp=HTTP.request("GET",SCINOTE_URL*"/api/v1/teams/$(team)/projects",header)
+        resp=HTTP.request("GET",SCINOTE_URL*"/api/v1/teams/$(team)/projects",header(token_tim))
         body = String(resp.body)
         data=JSON.parse(body)["data"]
+        n_projects = length(data)
+        projects  = Dict(data[i]["attributes"]["name"]=> data[i]["id"] for i in  1:n_projects)
     end 
 end
 
 """
     get_experiments(project::Int64,team::Int64)
-This function retrieves all experiments from the specified project
+This function retrieves all experiments and their IDs from the specified project
 """
-function get_experiments(team::Int64,project::Int64)
+function get_experiments(team,project)
     if api_running() == true 
-        resp=HTTP.request("GET",SCINOTE_URL*"/api/v1/teams/$(team)/projects/$(project)/experiments",header)
+        resp=HTTP.request("GET",SCINOTE_URL*"/api/v1/teams/$(team)/projects/$(project)/experiments",header(token_tim))
         body = String(resp.body)
         data=JSON.parse(body)["data"] 
+        n_experiments= length(data)
+        experiments = Dict(data[i]["attributes"]["name"]=> data[i]["id"] for i in  1:n_experiments)
     end
 end
 
 """
     get_tasks(team::Int64,project::Int64,experiment::Int64)
-This function retrieves all tasks from a specific experiment. 
+This function retrieves all tasks and theis IDs from a specific experiment. 
 """
-function get_tasks(team::Int64,project::Int64,experiment::Int64)
+function get_tasks(team,project,experiment;show_archived= false)
     if api_running() == true 
-        resp=HTTP.request("GET",SCINOTE_URL*"/api/v1/teams/$(team)/projects/$(project)/experiments/$(experiment)/tasks",header)
+        resp=HTTP.request("GET",SCINOTE_URL*"/api/v1/teams/$(team)/projects/$(project)/experiments/$(experiment)/tasks",header(token_tim))
         body = String(resp.body)
         data=JSON.parse(body)["data"]
+
+        n_tasks = length(data)
+
+        if show_archived == false
+            tasks = Dict(data[i]["attributes"]["name"] => data[i]["id"] for i in 1:n_tasks if data[i]["attributes"]["archived"] == false)
+        else
+            tasks = Dict(data[i]["attributes"]["name"] => data[i]["id"] for i in 1:n_tasks)
+        end
     end
 end
 
 
 """
     get_protocols(team::Int64,project::Int64,experiment::Int64,task::Int64)
-This function retrieves all protocols from a specific experiment. 
+This function retrieves all protocols and their IDs from a specific experiment. 
 """
-function get_protocols(team::Int64,project::Int64,experiment::Int64,task::Int64)
+function get_protocols(team,project,experiment,task)
     if api_running() == true 
-        resp=HTTP.request("GET",SCINOTE_URL*"/api/v1/teams/$(team)/projects/$(project)/experiments/$(experiment)/tasks/$(task)/protocols",header)
+        resp=HTTP.request("GET",SCINOTE_URL*"/api/v1/teams/$(team)/projects/$(project)/experiments/$(experiment)/tasks/$(task)/protocols",header(token_tim))
         body = String(resp.body)
         data=JSON.parse(body)["data"]
+        
+        n_protocols = length(data)
+
+        protocols = [data[i]["id"] for i in 1:n_protocols]
     end
 end
 
 
 """
     get_steps(team::Int64,project::Int64,experiment::Int64,task::Int64,protocol::Int64)
-This function retrieves all steps from a specific protocol. 
+This function retrieves all steps and their IDs from a specific protocol. 
 """
-function get_steps(team::Int64,project::Int64,experiment::Int64,task::Int64,protocol::Int64)
+function get_steps(team,project,experiment,task,protocol)
     if api_running() == true 
-        resp=HTTP.request("GET",SCINOTE_URL*"/api/v1/teams/$(team)/projects/$(project)/experiments/$(experiment)/tasks/$(task)/protocols/$(protocol)/steps",header)
+        resp=HTTP.request("GET",SCINOTE_URL*"/api/v1/teams/$(team)/projects/$(project)/experiments/$(experiment)/tasks/$(task)/protocols/$(protocol)/steps",header(token_tim))
         body = String(resp.body)
         data=JSON.parse(body)["data"]
+
+        n_steps = length(data)
+
+        steps = Dict(data[i]["attributes"]["name"] => data[i]["id"] for i in 1:n_steps)
     end
 end
 
+#"""
+#    get_step_table(team::Int64,project::Int64,experiment::Int64,task::Int64,protocol::Int64,step::Int64)
+#This function retrieves the table from specific step. 
+#Empty cells will be ignored. Be sure to have a proper 
+#"""
+#function get_step_table(team::Int64,project::Int64,experiment::Int64,task::Int64,protocol::Int64,step::Int64)
+#    if api_running() == true
+#        resp=HTTP.request("GET",SCINOTE_URL*"/api/v1/teams/$(team)/projects/$(project)/experiments/$(experiment)/tasks/$(task)/protocols/$(protocol)/steps/$(step)/tables",header(token_tim))
+#        body = String(resp.body)
+#        data=JSON.parse(JSON.parse(body)["data"][1]["attributes"]["contents"])["data"]
+#
+#        param_names = [data[i][1] for i in 1:length(data) if data[i][1] !== nothing]
+#        param_values = [data[i][2] for i in 1:length(data) if data[i][1] !== nothing]
+#        param_units = [data[i][3] for i in 1:length(data) if data[i][1] !== nothing]
+#
+#            return param_names,param_values,param_units
+#    end
+#end
+
+
 """
-    get_step_table(team::Int64,project::Int64,experiment::Int64,task::Int64,protocol::Int64,step::Int64)
-This function retrieves the table from specific step. 
-Empty cells will be ignored. Be sure to have a proper 
+    post_plot(plot::Plots.Plot{Plots},experiment::AbstractString)
+Post the plot on SciNote as an Attachement in the specified experiment. \n
+Only works for Experiments in:
+    AK Hasselbrink -> FemtoLab -> Spectroelectrochemistry
 """
-function get_step_table(team::Int64,project::Int64,experiment::Int64,task::Int64,protocol::Int64,step::Int64)
-    if api_running() == true
-        resp=HTTP.request("GET",SCINOTE_URL*"/api/v1/teams/$(team)/projects/$(project)/experiments/$(experiment)/tasks/$(task)/protocols/$(protocol)/steps/$(step)/tables",header)
+function post_plot(plot,experiment::AbstractString)
+    regex = r"(?:-)((\d|\w)*)"
+    task_match = match(regex,experiment)
+    task_name = task_match.captures[1]
+    if api_running() == true 
+
+        task_id = get_tasks(team_id,project_id_femto_lab,experiment_id_SEC)[task_name]
+        protocol_id = get_protocols(team_id,project_id_femto_lab,experiment_id_SEC,task_id)[1]
+        step_id = get_steps(team_id,project_id_femto_lab,experiment_id_SEC,task_id,protocol_id)[experiment]
+
+        savefig(plot,"./tmp.png")
+        file_data = open("./tmp.png") do io
+            base64encode(io)
+        end
+        rm("./tmp.png",force=true)
+
+        attachment = 
+            Dict(
+                "data"=> Dict(
+                    "attributes"=> Dict(
+                        "file_name" => "$experiment.png", 
+                        "file_type" => "image/png",
+                         "file_data" => file_data
+                        ),
+                    "type" => "attachments"
+                )
+            )
+        resp = HTTP.request("POST", SCINOTE_URL*"/api/v1/teams/$team_id/projects/$project_id_femto_lab/experiments/$experiment_id_SEC/tasks/$task_id/protocols/$protocol_id/steps/$step_id/attachments",
+            header(token_tim),
+            JSON.json(attachment)
+        )
         body = String(resp.body)
-        data=JSON.parse(JSON.parse(body)["data"][1]["attributes"]["contents"])["data"]
-
-        param_names = [data[i][1] for i in 1:length(data) if data[i][1] !== nothing]
-        param_values = [data[i][2] for i in 1:length(data) if data[i][1] !== nothing]
-        param_units = [data[i][3] for i in 1:length(data) if data[i][1] !== nothing]
-
-            return param_names,param_values,param_units
-    end
+        data=JSON.parse(body)["data"]
+   end
 end
