@@ -200,7 +200,7 @@ end
 """
     post_plot(plot::Plots.Plot{Plots},experiment::AbstractString; name = "This is a plot")
 Post the plot on SciNote as an Attachement in the specified experiment. If you dont specify name the name will be the same as experiment \n
-If succesfull the function return the link to the posted attachment \n
+If succesfull the function returns the link to the posted attachment \n
 Only works for Experiments in:
     AK Hasselbrink -> FemtoLab -> Spectroelectrochemistry
 """
