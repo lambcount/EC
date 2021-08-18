@@ -171,9 +171,9 @@ function get_steps(token_tim,team,project,experiment,task,protocol)
         body = String(resp.body)
         data=JSON.parse(body)["data"]
 
-        #n_steps = length(data)
+        n_steps = length(data)
 
-        #steps = Dict(data[i]["attributes"]["name"] => data[i]["id"] for i in 1:n_steps)
+        steps = Dict(data[i]["attributes"]["name"] => data[i]["id"] for i in 1:n_steps)
     end
 end
 
