@@ -129,7 +129,7 @@ This function retrieves all tasks and theis IDs from a specific experiment.
 """
 function get_tasks(token_tim,team,project,experiment;show_archived= false)
     if api_running() == true 
-        resp=HTTP.request("GET",SCINOTE_URL*"/api/v1/teams/$(team)/projects/$(project)/experiments/$(experiment)/tasks",header(token_tim))
+        resp=HTTP.request("GET",SCINOTE_URL*"/api/v1/teams/$(team)/projects/$(project)/experiments/$(experiment)/tasks?page[size]=999",header(token_tim))
         body = String(resp.body)
         data=JSON.parse(body)["data"]
 
@@ -167,13 +167,13 @@ This function retrieves all steps and their IDs from a specific protocol.
 """
 function get_steps(token_tim,team,project,experiment,task,protocol)
     if api_running() == true 
-        resp=HTTP.request("GET",SCINOTE_URL*"/api/v1/teams/$(team)/projects/$(project)/experiments/$(experiment)/tasks/$(task)/protocols/$(protocol)/steps",header(token_tim))
+        resp=HTTP.request("GET",SCINOTE_URL*"/api/v1/teams/$(team)/projects/$(project)/experiments/$(experiment)/tasks/$(task)/protocols/$(protocol)/steps?page[size]=999",header(token_tim))
         body = String(resp.body)
         data=JSON.parse(body)["data"]
 
-        n_steps = length(data)
+        #n_steps = length(data)
 
-        steps = Dict(data[i]["attributes"]["name"] => data[i]["id"] for i in 1:n_steps)
+        #steps = Dict(data[i]["attributes"]["name"] => data[i]["id"] for i in 1:n_steps)
     end
 end
 
