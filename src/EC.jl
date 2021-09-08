@@ -6,6 +6,7 @@ using DelimitedFiles,DataFrames
 include("./data.jl")
 include("./io.jl")
 include("./scinote.jl")
+include("savitzkyGolay.jl")
 
 export
     ec_grab,
@@ -14,5 +15,6 @@ export
     total_cycles,
     get_params,
     idx_cycle,
-    post_plot
+    post_plot,
+    savitzky_golay_filter
 end

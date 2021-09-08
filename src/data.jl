@@ -3,14 +3,27 @@
 
 function idx_cycle(voltage,start_idx)
 
-    _voltage = voltage .+1000
+    _voltage = voltage .+10
 
+   
     if _voltage[start_idx] > _voltage[start_idx+10]
         _idx=findnext(x->x>= _voltage[start_idx],_voltage,start_idx+1)
+
+        while _idx === nothing 
+            start_idx += 1
+            _idx=findnext(x->x>= _voltage[start_idx],_voltage,start_idx+1) 
+        end
+
         idx=findnext(x->x<= _voltage[start_idx],_voltage,_idx+1)
 
     elseif _voltage[start_idx] < _voltage[start_idx+10]
         _idx=findnext(x->x<= _voltage[start_idx],_voltage,start_idx+1)
+
+        while _idx === nothing 
+            start_idx += 1
+            _idx=findnext(x->x<= _voltage[start_idx],_voltage,start_idx+1)
+        end
+
         idx=findnext(x->x>= _voltage[start_idx],_voltage,_idx+1)
     end
     return idx
@@ -99,3 +112,5 @@ function cycle(voltage,current,cycle::Int64)
         end
     end  
 end
+
+
