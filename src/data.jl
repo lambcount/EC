@@ -1,116 +1,135 @@
+using Dierckx
 
+"""
+calc_time(v::AbstractVector;Δt=1e-1) \n
 
+Calculate a time vector with the length of the given input array and a Δt which refers to the sample time, it defaults to 1e-1. 
+"""
+function calc_time(v::AbstractVector;Δt=1e-1)
+    collect(0:Δt:(length(v)-1)*Δt)
+end
 
-function idx_cycle(voltage,start_idx)
+function idx_cycle(v::AbstractVector;Δt= 1e-1,pot=nothing,start_ind=nothing)
+    time = calc_time(v,Δt=Δt)
+    spl = Spline1D(time,v)
+    der= [derivative(spl,i) for i in time]
 
-    _voltage = voltage .+10
-
-   
-    if _voltage[start_idx] > _voltage[start_idx+10]
-        _idx=findnext(x->x>= _voltage[start_idx],_voltage,start_idx+1)
-
-        while _idx === nothing 
-            start_idx += 1
-            _idx=findnext(x->x>= _voltage[start_idx],_voltage,start_idx+1) 
+    if pot !== nothing && start_ind === nothing
+        diff = v .- pot .|> abs
+        start_idx = 1
+       for i in 1:length(v) 
+            if diff[i] < 0.0005
+                start_idx = i
+                break
+            end
         end
+    elseif pot === nothing && start_ind === nothing
+        start_idx = 1
 
-        idx=findnext(x->x<= _voltage[start_idx],_voltage,_idx+1)
+    elseif pot === nothing && start_ind !== nothing
 
-    elseif _voltage[start_idx] < _voltage[start_idx+10]
-        _idx=findnext(x->x<= _voltage[start_idx],_voltage,start_idx+1)
-
-        while _idx === nothing 
-            start_idx += 1
-            _idx=findnext(x->x<= _voltage[start_idx],_voltage,start_idx+1)
-        end
-
-        idx=findnext(x->x>= _voltage[start_idx],_voltage,_idx+1)
+        start_idx = start_ind
+    else
+        error!("You cannot give a start potential and a start index as input.")
     end
-    return idx
+
+    start = copy(start_idx)
+
+    if der[start_idx] < 0
+        
+        _idx=findnext(x->x>= v[start_idx],v,start_idx+1)
+
+        while _idx === nothing 
+            start_idx += 1
+            _idx=findnext(x->x>= v[start_idx],v,start_idx+1) 
+        end
+
+        idx=findnext(x->x<= v[start_idx],v,_idx+1)
+
+    elseif der[start_idx] > 0
+        _idx=findnext(x->x<= v[start_idx],v,start_idx+1)
+
+        while _idx === nothing 
+            start_idx += 1
+            _idx=findnext(x->x<= v[start_idx],v,start_idx+1)
+        end
+
+        idx=findnext(x->x>= v[start_idx],v,_idx+1)
+    end   
+    
+    return start:idx
+    
 end
 
 
 """
-total_cycles(voltage::Array{Number,1})
+total_cycles(v::AbstractVector;Δt= 1e-1,pot=nothing,start_ind=nothing) \n
 
-Returns the total number of full cycles in voltage.
+Returns the total number of full cycles in v. Specify the start potential of the cycle with either the potential (pot) or the index (start_ind).
 """
-function total_cycles(voltage)
+function total_cycles(v::AbstractVector;Δt= 1e-1,pot=nothing,start_ind=nothing)
 
-    idx = idx_cycle(voltage,1)
-    total_cycle = round(length(voltage)/idx) |> Int
+    idx = idx_cycle(v,Δt=Δt,pot=pot,start_ind=start_ind)[end]
+    round(length(v)/idx) |> Int
 end  
 
 
-
-function cycle(voltage,cycle::Int64) 
+function cycle(v::AbstractVector,cycle::Int64;Δt= 1e-1,pot=nothing,start_ind=nothing) 
 
     
-    idx = idx_cycle(voltage,1)
-    total_cycles = round(length(voltage)/idx) |> Int
+    range = idx_cycle(v,Δt=Δt,pot=pot,start_ind=start_ind)      
+    n_cycles = total_cycles(v,Δt=Δt,pot=pot,start_ind=start_ind)
    
-    if cycle > total_cycles
-        error("There are only $(total_cycles) full cycles in your Array.")
+    if cycle > n_cycles
+        error("There are only $(n_cycles) full cycles in your Array.")
     else
-
         if cycle == 1
         
-            return voltage[1:idx]
+            return v[range]
 
         elseif cycle > 1 
-            _idx_1 = 1
-            _idx_2 = deepcopy(idx)
-    
-
+            _idx = range[end]
             for i in 2:cycle
-
-                if i == cycle
-                    _idx_1 = deepcopy(_idx_2)
+                range = idx_cycle(v,Δt=Δt,start_ind=_idx)
+                _idx = range[end]
+                if i == cycle 
+                    break
                 end
-                _idx_2 = idx_cycle(voltage,_idx_2)
-
-                
-          
             end
-            return voltage[_idx_1:_idx_2]
+            return v[range]
         end
     end       
 end
 
 """
-cycle(voltage::Array{Any,1},current::Array{Any,1},cycle::Int64)
+cycle(v::AbstractVector,c::AbstractVector,cycle::Int64;Δt= 1e-1,pot=nothing,start_ind=nothing) \n
 
-Return the Input voltage and current Arrays for the given cycle argument.
+Return the Input voltage and current Arrays for the given cycle argument. Δt refers to the sample time, default at 1e-1. Specify the start potential of the cycle with either the potential (pot) or the index (start_ind).
 """
-function cycle(voltage,current,cycle::Int64)
+function cycle(v::AbstractVector,c::AbstractVector,cycle::Int64;Δt= 1e-1,pot=nothing,start_ind=nothing) 
 
-    idx = idx_cycle(voltage,1)
-    total_cycles = round(length(voltage)/idx) |> Int
+
+    range = idx_cycle(v,Δt=Δt,pot=pot,start_ind=start_ind)       
+    n_cycles = total_cycles(v,Δt=Δt,pot=pot,start_ind=start_ind)
    
-    if cycle > total_cycles
-        error("There are only $(total_cycles) full cycles in your Array.")
+    if cycle > n_cycles
+        error("There are only $(n_cycles) full cycles in your Array.")
     else
 
         if cycle == 1
         
-            return voltage[1:idx],current[1:idx]
+            return v[range],c[range]
 
         elseif cycle > 1 
-            _idx_1 = 1
-            _idx_2 = deepcopy(idx)
-    
-
+            _idx = range[end]
             for i in 2:cycle
-
-                if i == cycle
-                    _idx_1 = deepcopy(_idx_2)
+                range = idx_cycle(v,Δt=Δt,start_ind=_idx)
+                _idx = range[end]
+                if i == cycle 
+                    break
                 end
-
-                _idx_2 = idx_cycle(voltage,_idx_2)
             end
-            return voltage[_idx_1:_idx_2],current[_idx_1:_idx_2]
+            return v[range],c[range]
         end
-    end  
-end
-
-
+    end       
+end;
