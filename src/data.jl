@@ -9,7 +9,13 @@ function calc_time(v::AbstractVector;Δt=1e-1)
     collect(0:Δt:(length(v)-1)*Δt)
 end
 
-function diff(v)
+
+"""
+diff(v::AbstractVector)) \n
+
+Returns a length(v)-1 array with the differences between the i and the i+1 value.
+"""
+function diff(v::AbstractVector)
     [v[i] - v[i+1] for i in 1:length(v)-1]
 end
 
@@ -28,10 +34,11 @@ function idx_cycle(v::AbstractVector;start_pot=nothing,start_idx=nothing,start_c
         if start_cycle +2 > length(roots_der)
             error("You cant use the start_cycle kwarg since there is no full cycle starting from the potential minimum.")
         else
-            if roots_der[1] < roots_der[2]
+            if v[roots_der[1]] < v[roots_der[2]]
 
                 return roots_der[start_cycle]:roots_der[start_cycle+2]
-            elseif roots_der[1] > roots_der[2]
+
+            elseif v[roots_der[1]] > v[roots_der[2]]
                 start_cycle += 1
 
                 return roots_der[start_cycle]:roots_der[start_cycle+2]
@@ -140,10 +147,11 @@ function cycle(v::AbstractVector,cycle::Int64;start_pot=nothing,start_idx=nothin
     end       
 end
 
-"""
-cycle(v::AbstractVector,c::AbstractVector,cycle::Int64;Δt= 1e-1,pot=nothing,start_ind=nothing) \n
 
-Return the Input voltage and current Arrays for the given cycle argument. Δt refers to the sample time, default at 1e-1. Specify the start potential of the cycle with either the potential (pot) or the index (start_ind).
+"""
+cycle(v::AbstractVector,c::AbstractVector,cycle::Int64;start_pot=nothing,start_idx=nothing,start_min  = false)  \n
+
+Return the Input voltage and current Arrays for the given cycle argument. Specify the start potential of the cycle with either the potential (start_pot) or the index (start_idx) or just start from the minimum (start_min)
 """
 function cycle(v::AbstractVector,c::AbstractVector,cycle::Int64;start_pot=nothing,start_idx=nothing,start_min  = false) 
 
