@@ -150,7 +150,8 @@ function cycle(v::AbstractVector,c::AbstractVector,cycle::Int64;start_pot=nothin
     if cycle > n_cycles
         error("There are only $(n_cycles) full cycles in your Array.")
     elseif start_min === true
-        return v[idx_cycle(v,start_cycle=cycle)]
+        range = idx_cycle(v,start_cycle=cycle)
+        return v[range],c[range]
     else
         range = idx_cycle(v,start_pot=start_pot,start_idx=start_idx)
 
