@@ -10,7 +10,7 @@ function calc_time(v::AbstractVector;Δt=1e-1)
 end
 
 function diff(v)
-    [v[i] - v[i+1] for i in 1:lenght(v)-1]
+    [v[i] - v[i+1] for i in 1:length(v)-1]
 end
 
 function idx_cycle(v::AbstractVector;start_pot=nothing,start_idx=nothing,start_cycle  = nothing)
@@ -28,13 +28,15 @@ function idx_cycle(v::AbstractVector;start_pot=nothing,start_idx=nothing,start_c
         if start_cycle +2 > length(roots_der)
             error("You cant use the start_cycle kwarg since there is no full cycle starting from the potential minimum.")
         else
-            if isodd(start_cycle) == true
+            if roots_der[1] < roots_der[2]
 
                 return roots_der[start_cycle]:roots_der[start_cycle+2]
-            else
+            elseif roots_der[1] > roots_der[2]
                 start_cycle += 1
 
                 return roots_der[start_cycle]:roots_der[start_cycle+2]
+            else 
+                error("The derivative of your potential does not show any roots. Try smoothing your input potential.")
             end
 
         end
@@ -42,9 +44,9 @@ function idx_cycle(v::AbstractVector;start_pot=nothing,start_idx=nothing,start_c
 
 
 
-    if start_pot !== nothing && start_idx === nothing && start_cycle == false
+    if start_pot !== nothing && start_idx === nothing && start_cycle === nothing
 
-        pot_diff = v .- pot .|> abs
+        pot_diff = v .- start_pot .|> abs
         minstd =  diff(v) |> std
         start_idx = 1
 
@@ -54,10 +56,10 @@ function idx_cycle(v::AbstractVector;start_pot=nothing,start_idx=nothing,start_c
                 break
             end
         end
-    elseif start_pot === nothing && start_idx === nothing && start_cycle == false
+    elseif start_pot === nothing && start_idx === nothing && start_cycle === nothing
         start_idx = 1
 
-    elseif start_pot === nothing && start_idx !== nothing && start_cycle == false
+    elseif start_pot === nothing && start_idx !== nothing && start_cycle === nothing
 
         start_idx = start_idx
     else
@@ -115,6 +117,7 @@ function cycle(v::AbstractVector,cycle::Int64;start_pot=nothing,start_idx=nothin
     if cycle > n_cycles
         error("There are only $(n_cycles) full cycles in your Array.")
     elseif start_min === true
+        range = idx_cycle(v,start_cycle=cycle)
         return v[idx_cycle(v,start_cycle=cycle)]
     else
         range = idx_cycle(v,start_pot=start_pot,start_idx=start_idx)
