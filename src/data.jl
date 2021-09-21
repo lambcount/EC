@@ -13,28 +13,28 @@ function diff(v)
     [v[i] - v[i+1] for i in 1:lenght(v)-1]
 end
 
-function idx_cycle(v::AbstractVector;start_pot=nothing,start_idx=nothing,start_min  = nothing)
+function idx_cycle(v::AbstractVector;start_pot=nothing,start_idx=nothing,start_cycle  = nothing)
     x   = collect(1:length(v))
     smooth_v = savitzky_golay_filter(v,101,2)
     spl_v = Spline1D(x,smooth_v,s=1e-4)
     der= [derivative(spl_v,i) for i in x]
     
 
-    if  start_min !== nothing
+    if  start_cycle !== nothing
         smooth_der = savitzky_golay_filter(der,101,2)
         spl_der = Spline1D(x,smooth_der,s=1e-10)
         roots_der  = roots(spl_der) .|> round .|> Int
 
-        if start_min +2 > length(roots_der)
-            error("You cant use the start_min kwarg since there is no full cycle starting from the potential minimum.")
+        if start_cycle +2 > length(roots_der)
+            error("You cant use the start_cycle kwarg since there is no full cycle starting from the potential minimum.")
         else
-            if isodd(start_min) == true
+            if isodd(start_cycle) == true
 
-                return roots_der[start_min]:roots_der[start_min+2]
+                return roots_der[start_cycle]:roots_der[start_cycle+2]
             else
-                start_min += 1
+                start_cycle += 1
 
-                return roots_der[start_min]:roots_der[start_min+2]
+                return roots_der[start_cycle]:roots_der[start_cycle+2]
             end
 
         end
@@ -42,7 +42,7 @@ function idx_cycle(v::AbstractVector;start_pot=nothing,start_idx=nothing,start_m
 
 
 
-    if start_pot !== nothing && start_idx === nothing && start_min == false
+    if start_pot !== nothing && start_idx === nothing && start_cycle == false
 
         pot_diff = v .- pot .|> abs
         minstd =  diff(v) |> std
@@ -54,10 +54,10 @@ function idx_cycle(v::AbstractVector;start_pot=nothing,start_idx=nothing,start_m
                 break
             end
         end
-    elseif start_pot === nothing && start_idx === nothing && start_min == false
+    elseif start_pot === nothing && start_idx === nothing && start_cycle == false
         start_idx = 1
 
-    elseif start_pot === nothing && start_idx !== nothing && start_min == false
+    elseif start_pot === nothing && start_idx !== nothing && start_cycle == false
 
         start_idx = start_idx
     else
@@ -100,9 +100,9 @@ total_cycles(v::AbstractVector;Δt= 1e-1,pot=nothing,start_ind=nothing) \n
 
 Returns the total number of full cycles in v. Specify the start potential of the cycle with either the potential (pot) or the index (start_ind).
 """
-function total_cycles(v::AbstractVector;start_pot=nothing,start_idx=nothing,start_min = nothing)
+function total_cycles(v::AbstractVector;start_pot=nothing,start_idx=nothing,start_cycle = nothing)
 
-    idx = idx_cycle(v,start_pot=start_pot,start_idx=start_idx,start_min = start_min)[end]
+    idx = idx_cycle(v,start_pot=start_pot,start_idx=start_idx,start_cycle = start_cycle)[end]
     round(length(v)/idx) |> Int
 end  
 
@@ -110,12 +110,12 @@ end
 function cycle(v::AbstractVector,cycle::Int64;start_pot=nothing,start_idx=nothing,start_min  = false) 
 
          
-    n_cycles = total_cycles(v,start_pot = start_pot, start_idx = start_idx, start_min = 1)
+    n_cycles = total_cycles(v,start_pot = start_pot, start_idx = start_idx, start_cycle = 1)
    
     if cycle > n_cycles
         error("There are only $(n_cycles) full cycles in your Array.")
     elseif start_min === true
-        return v[idx_cycle(v,start_min=cycle)]
+        return v[idx_cycle(v,start_cycle=cycle)]
     else
         range = idx_cycle(v,start_pot=start_pot,start_idx=start_idx)
 
@@ -142,15 +142,15 @@ cycle(v::AbstractVector,c::AbstractVector,cycle::Int64;Δt= 1e-1,pot=nothing,sta
 
 Return the Input voltage and current Arrays for the given cycle argument. Δt refers to the sample time, default at 1e-1. Specify the start potential of the cycle with either the potential (pot) or the index (start_ind).
 """
-function cycle(v::AbstractVector,cycle::Int64;start_pot=nothing,start_idx=nothing,start_min  = false) 
+function cycle(v::AbstractVector,c::AbstractVector,cycle::Int64;start_pot=nothing,start_idx=nothing,start_min  = false) 
 
          
-    n_cycles = total_cycles(v,start_pot = start_pot, start_idx = start_idx, start_min = 1)
+    n_cycles = total_cycles(v,start_pot = start_pot, start_idx = start_idx, start_cycle = 1)
    
     if cycle > n_cycles
         error("There are only $(n_cycles) full cycles in your Array.")
     elseif start_min === true
-        return v[idx_cycle(v,start_min=cycle)]
+        return v[idx_cycle(v,start_cycle=cycle)]
     else
         range = idx_cycle(v,start_pot=start_pot,start_idx=start_idx)
 
