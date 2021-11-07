@@ -1,5 +1,3 @@
-include("./elements.jl")
-include("./struct.jl")
 
 """
 Fetches all the circuit components and the total number of components.
@@ -187,19 +185,18 @@ function build_circuit(raw_circuit,p,f)
             push!(imp,_imp)
         else
             key_2 = keys(circuit[key_1])
+            #dictionary of p_n 
             dicts_p = [circuit[key_1][_k] for _k in key_2]
-
+            # impedance of first parallel circuit
             p_imp = []   
-
+            # iterate through the dictionarys in p_n ...
             for k in dicts_p
                 p_k = []              
-
-                key_3   = keys(k)
-               
+                key_3   = keys(k)               
                 for key in key_3
                     if occursin("parallel",key) == true
-                        key_4 = dicts_p[k][key]
-                        dicts_p_2 = [dicts_p[k][key][_k] for _k in key_4]
+                        key_4 = k[key] |> keys
+                        dicts_p_2 = [k[key][_k] for _k in key_4]
                         p_imp_2 = []
                             for k_2 in dicts_p_2 
                                 s_in_p2 = keys(k_2)
@@ -210,9 +207,8 @@ function build_circuit(raw_circuit,p,f)
                                 end
                                 push!(p_imp_2,series(s_in_p_imp))
                             end
-                        push!(p_k,p_imp_2)
-                    else
-                        
+                        push!(p_k,parallel(p_imp_2))
+                    else 
                         _imp = imp_comp(key,components,p,f)
                         push!(p_k,_imp)
                     end    
@@ -222,17 +218,8 @@ function build_circuit(raw_circuit,p,f)
             push!(imp,parallel(p_imp))            
         end
     end
-    return Circuit(raw_circuit,circuit,imp)         
+    imp = series(imp)
+    return Circuit(raw_circuit,circuit,circuit,imp,imp .|> abs)         
 end
 
 
-#test = [
-#    "R_1-p(C_1-R_2,CPE_1)-p(C_2-p(C_3,R_3),R_4)",
-#    "R_1-p(C_1-R_2,CPE_1)-p(C_2,R_3-p(C_3,R_4))",
-#    "R_1-p(C_1-R_2,CPE_1)-p(C_2,CPE_2,R_3-p(C_3,R_4))",
-#    "R_1-p(C_1-p(R_2,CPE_1),R_3)-p(C_2-p(C_3,R_4),R_5)",
-#    "R_1-p(C_1-p(R_2,CPE_1),R_3)-p(C_2-p(C_3,R_4),R_5,R_6)",
-#    "p(R_1,R_2)"
-#]
-#
-#dict = test .|> conv_circuit 

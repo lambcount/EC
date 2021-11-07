@@ -6,7 +6,10 @@ using DelimitedFiles,DataFrames
 include("./data.jl")
 include("./io.jl")
 include("./scinote.jl")
-include("savitzkyGolay.jl")
+include("./elements.jl")
+include("./struct.jl")
+include("./build_circuits.jl")
+include("./savitzkyGolay.jl")
 
 export
     ec_grab,
@@ -16,5 +19,7 @@ export
     get_params,
     idx_cycle,
     post_plot,
-    savitzky_golay_filter
+    savitzky_golay_filter,
+    build_circuit,
+    get_circuit
 end
