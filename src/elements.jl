@@ -95,7 +95,7 @@ end
 
 Notes
 -----
-units=["Ohm^-1", "sec^a",""]
+units=["Ohm^-1", "s^a",""]
 
     Z = 1/(Q(i 2πf)^α)
 
@@ -114,7 +114,7 @@ defines a semi-infinite Warburg element
 
 Notes
 -----
-units=[Ohm/√sec]
+units=[Ohm/√s]
 
     Z = A_w /√2πf * (1-i)
 

@@ -50,19 +50,30 @@ function imp_comp(component,components,p,f)
 
 end
 
+"""
+Returns the index of component in components.
+"""
 function iden_comp(component,components)
 
+    idx = findall(x-> x== component,components)[1]
+    
+    if occursin.("CPE",components[1:idx-1]) |> any == false
 
-   idx = findall(x-> x== component,components)[1]
-   return idx
+        return idx
 
+    else
+        n = count.("CPE",components[1:idx-1]) |> sum
+
+        return idx+n
+    end
 end
 
 
 function conv_circuit(raw_circuit::AbstractString)
 
     r_s = r"(\((?:[^()]++|(?1))*\))(*SKIP)(*F)|(?<s>\w+_\d+)"
-    r_p = r"(?:\G(?!^),|p\()(\w+(?:-(?!p\()\w+)*(?:-p(\((?:[^()]++|(?2))*\)))?)"
+    r_p_old = r"(?:\G(?!^),|p\()(\w+(?:-(?!p\()\w+)*(?:-p(\((?:[^()]++|(?2))*\)))?)"
+    r_p = r"(?:\G(?!^),|p\()(p(\((?:[^()]++|(?-1))*\))(?:-\w+)?|\w+(?:-p(\((?:[^()]++|(?-1))*\)))?)"
 
     r2 = r"(?:\G(?!^),|\()(\w+(?:-(?!p\()\w+)*(?:-(\((?:[^()]++|(?2))*\)))?)"
 
@@ -89,9 +100,9 @@ function conv_circuit(raw_circuit::AbstractString)
         n_p = 1
         n_p_in_p = 0
 
-        _old_p_captures = nothing
+        _old_p_captures = [nothing,nothing]
         for p_comp in p_components
-            if p_comp.captures[2] === nothing && _old_p_captures === nothing
+            if (p_comp.captures[2:3] .=== nothing) |> all  && (_old_p_captures .=== nothing) |> all
                 _p,_p_len = get_circuit(p_comp.captures[1])
                      #check whether this is the start of a new parallel circuit or an existing one
                     if occursin("p(",p_comp.match) == true
@@ -124,7 +135,12 @@ function conv_circuit(raw_circuit::AbstractString)
                 elseif p_comp.match[1] == ','
                     n_p += 1
                 end  
-                p_components_in_p = eachmatch(r2,p_comp.captures[2]) |> collect
+
+                if p_comp.captures[2] === nothing
+                    p_components_in_p = eachmatch(r2,p_comp.captures[3]) |> collect
+                else
+                    p_components_in_p = eachmatch(r2,p_comp.captures[2]) |> collect
+                end
 
                 for _p_in_p in p_components_in_p
                     if haskey(components,"parallel_$(n)") == false
@@ -151,7 +167,7 @@ function conv_circuit(raw_circuit::AbstractString)
                 end                
             end
             n_p_in_p = 0
-            _old_p = p_comp.captures[2]
+            _old_p = p_comp.captures[2:3]
         end       
     end    
     if (p_components |> isempty == true) && (s_components |> isempty == true )
@@ -165,12 +181,14 @@ end
 
 """
 Calculate the Impedance of a custom Circuit. The input circuit string should look like circuit="R_i-p(R_j,C_k)". For series circuits use '-' for parallel p(X_1,X_2).\n 
-The following circuit components can be used: \n 
+IMPORTANT: Up until now it is only possible to create a 2nd lvl parallel circuit, like:\n
+p(C_1,p(C_2,R_1)). If there is a need for a 3rd lvl parallel circuit or more. Let me know.
+The following circuit components can be used, p gives the number of required parameters per component. \n 
 \t R \t [Ohm]\t p=1 \n
 \t C \t [F]\t p=1 \n
-\t CPE \t [F]\t p=2 \n
+\t CPE \t [Ohm^-1"]\t p=2 \n
 \t L \t [H]\t p=1 \n
-\t W \t [Ohm/√sec] p=1 \n
+\t W \t [Ohm/√s] p=1 \n
 """
 function build_circuit(raw_circuit,p,f)
    
@@ -219,7 +237,61 @@ function build_circuit(raw_circuit,p,f)
         end
     end
     imp = series(imp)
-    return Circuit(raw_circuit,circuit,circuit,imp,imp .|> abs)         
+    components_dict =  create_components_dict(components,p)
+    return Circuit(
+        raw_circuit,          # circuit_string
+        circuit,              # circuit_dict
+        components_dict,      # components_dict with parameters
+        imp,                  # complex impedance
+        imp .|> angle .|> abs # phase
+        )         
 end
 
 
+function create_components_dict(components,p)
+
+    components_dict = Dict()
+
+    for comp in components
+        if   occursin("R_",comp)
+            push!(components_dict,comp => [p[iden_comp(comp,components)] "Ω"])
+        elseif occursin("C_",comp) 
+            push!(components_dict,comp => [p[iden_comp(comp,components)] "F"])      
+        elseif occursin("CPE_",comp) 
+            idx = iden_comp(comp,components)
+            push!(components_dict,comp => [p[idx] "Ω^-1";p[idx+1] ""])
+        elseif occursin("L_",comp)
+            push!(components_dict,comp => [p[iden_comp(comp,components)] "H"]) 
+        elseif occursin("W_",comp) 
+            push!(components_dict,comp => [p[iden_comp(comp,components)] "Ω /√s"])
+        end
+    end
+    return components_dict
+
+end
+
+"""
+Return a logspace Array from power of a to power of b.\n
+julia> freq(-2,2)
+360-element Array{Float64,1}:
+  0.01
+  0.011000000000000001
+  0.012
+  0.013000000000000001
+  0.013999999999999999
+  0.015
+  0.016
+  ⋮
+ 94.0
+ 95.0
+ 96.0
+ 97.0
+ 98.0
+ 99.0
+
+"""
+function freq(a,b)
+    a = a |> Float64
+    f = [i*10^j for i in 1:0.1:9.9 for j in a:1:b-1] |> sort
+    return f
+end

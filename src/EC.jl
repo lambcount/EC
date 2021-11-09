@@ -21,5 +21,7 @@ export
     post_plot,
     savitzky_golay_filter,
     build_circuit,
-    get_circuit
+    get_circuit,
+    freq,
+    conv_circuit
 end

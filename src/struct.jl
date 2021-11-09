@@ -3,5 +3,5 @@ struct Circuit
     circuit_dict::Dict
     components_dict::Dict
     impedance
-    abs_impedance
+    phase
 end
