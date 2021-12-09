@@ -4,4 +4,5 @@ struct Circuit
     components_dict::Dict
     impedance
     phase
+    parameter
 end

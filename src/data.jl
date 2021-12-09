@@ -29,7 +29,7 @@ function idx_cycle(v::AbstractVector;start_pot=nothing,start_idx=nothing,start_c
     if  start_cycle !== nothing
         smooth_der = savitzky_golay_filter(der,101,2)
         spl_der = Spline1D(x,smooth_der,s=1e-10)
-        roots_der  = roots(spl_der) .|> round .|> Int
+        roots_der  = roots(spl_der,maxn=100) .|> round .|> Int
 
         if start_cycle +2 > length(roots_der)
             error("You cant use the start_cycle kwarg since there is no full cycle starting from the potential minimum.")

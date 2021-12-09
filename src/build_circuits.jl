@@ -243,8 +243,9 @@ function build_circuit(raw_circuit,p,f)
         circuit,              # circuit_dict
         components_dict,      # components_dict with parameters
         imp,                  # complex impedance
-        imp .|> angle .|> abs # phase
-        )         
+        imp .|> angle .|> abs, # phase
+        p                      # parameter array        
+    )         
 end
 
 
