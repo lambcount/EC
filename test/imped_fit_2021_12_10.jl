@@ -1,38 +1,38 @@
-
-t = collect(0:1e-3:1)
-sine_1 = f_sin(t,[0,1,10,0])
-sine_2 = f_sin(t,[0,0.5,100,0])
-sine_3 = sine_1 .+ sine_2
-
-
-path = "/Users/lammerzahl/Git/EC/test/Data/imped/mephisto"
+path = "/Users/lammerzahl/Git/EC/test/Data/imped/2021_12_10/"
 m_pathes = joinpath.(path,readdir(path))
 RV = [
     10,
     10,
     10,
     10,
-    20,
     10,
     10,
-    20,
-    20,
+    10,
+    10,
+    10,
+    10,
+    10,
     100,
-    100
+    100,
+    500,
+    500,
 ]
 
 f = [
     1e4,
     7e3,
+    5e3,
     3e3,
-    3e3,
-    3e3,
+    2e3,
     1e3,
     7e2,
-    7e2,
+    5e2,
     3e2,
-    3e2,
-    1e2
+    2e2,
+    7e1,
+    5e1,
+    2e1,
+    1e1
 ]
 measurements = [import_oszi_imped(m_pathes[i],RV[i]) for i in 1:length(m_pathes)]
 r = r"(\d+)"
