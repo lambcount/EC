@@ -1,4 +1,4 @@
-path = "/Users/lammerzahl/Git/Share_Library/FcC11/data/exp_raw/EC/2021_12_10"
+path = "/Users/lammerzahl/Git/Share_Library/FcC11/data/exp_raw/EC/2012_11_22"
 m_pathes = joinpath.(path,readdir(path))
 RV = [
     10,
