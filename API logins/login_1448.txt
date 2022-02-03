@@ -1,0 +1,2 @@
+#<Doorkeeper::Application id: nil, name: "Titus", uid: "a-Af6eZlLy2mk69opuvBrTxKXQ191-JXiSHCWzDOa8g", secret: "gFt_qjNMbSyjQ_FhDaFmo-FS6Rw-mqETYHX9bgURuSk", redirect_uri: "", scopes: "", confidential: true, created_at: nil, updated_at: nil>
+

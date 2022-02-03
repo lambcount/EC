@@ -2,8 +2,14 @@ using HDF5
 import Base: findall
 
 function get_fnames_and_types(filepath)
-    filenames = first.(splitext.(last.(split.(filepath,'/'))))
-    fileext = last.(splitext.(last.(split.(filepath,'/'))))
+
+    if Sys.isapple() == true
+        filenames = first.(splitext.(last.(split.(filepath,'/'))))
+        fileext = last.(splitext.(last.(split.(filepath,'/'))))
+    elseif Sys.iswindows() == true
+        filenames = first.(splitext.(last.(split.(filepath,"\\"))))
+        fileext = last.(splitext.(last.(split.(filepath,"\\"))))
+    end
 
     return filenames,fileext
 end
@@ -13,7 +19,7 @@ end
 Fetch the CV and OCP Measurements from your dir. 
 
 eg. 
-    julia> v,c = ec_grab("001-001",dir = "..")\n\t
+    julia> v,c = ec_grab("EC-001-001",dir = "..")\n\t
 
 
 You can also grab the DataFrame from ec_list(). Be sure that the experiments in ec_list() all are either CV or OCP or another experiment. Otherwise this will result in an error.
@@ -21,12 +27,8 @@ You can also grab the DataFrame from ec_list(). Be sure that the experiments in 
     
     julia>v=ec_grab(ec_list(measurement="CV"))
 """
-function ec_grab(measurement::AbstractString; dir::AbstractString = "./Data/EC")
-    if occursin("EC-",measurement) == false
-        _measurement = "EC-"*measurement
-    else
-        _measurement = measurement
-    end
+function ec_grab(_measurement::AbstractString; dir::AbstractString = "./test/Data/EC")
+
 
         dirs_files = readdir(dir,join=true)
         files = [dirs_files[i] for i in 1:length(dirs_files) if isdir(dirs_files[i]) == false]
@@ -49,7 +51,9 @@ function ec_grab(measurement::AbstractString; dir::AbstractString = "./Data/EC")
 
                     return _volt
 
-                elseif _measurement == "CV"
+                elseif match(r"\D+",_measurement).match == "CV"
+                    if _measurement == "CV"
+
                     data = h5open(files[idx_file]) do fid
                         read(fid["CV"]["Data"])
                         end
@@ -57,13 +61,43 @@ function ec_grab(measurement::AbstractString; dir::AbstractString = "./Data/EC")
                     _curr = data[:,2]
 
                     return _volt,_curr
+
+                    else
+
+                        measurments = h5open(files[idx_file]) do fid
+                            keys(fid)
+                        end
+
+                        data = [h5open.(files[idx_file])[measurments[i]]["Data"] |> read for i in 1:length(measurments) ]
+
+                        close(h5open(files[idx_file]))
+                        
+                        if length(data) > 1
+                        
+                            _volt = [data[i][:,1] for i in 1:length(data)]
+                            _curr = [data[i][:,2] for i in 1:length(data)]
+                        else
+                                                    
+                            _volt = data[1][:,1]
+                            _curr = data[1][:,2]
+
+                        end
+
+                        return _volt,_curr
+                    end
+
                     end                       
                 
             elseif fileext[idx_file] == ".csv"
                 data = readdlm(files[idx_file])
+                if last(size(data)) > 1
                 _volt = data[:,1]
                 _curr = data[:,2]
                     return _volt,_curr
+                else
+                    _volt = data[:,1]
+                    return _volt
+                end
 
             elseif fileext[idx_file] == ".txt"
                 data = readdlm(files[idx_file])
@@ -107,7 +141,6 @@ function ec_grab(df::DataFrame)
     if all(last.(size.(data)).== last(size(data[1])))
         if (last(size(data[1])) == 1) || (try size(data[1])[2] catch end === nothing)
             _dim1 = [data[i][:,1] for i in 1:length(data)]
-            @show data[1]
             return _dim1
         elseif last(size(data[1])) == 2
             _dim1 = [data[i][:,1] for i in 1:length(data)]
@@ -152,9 +185,23 @@ e.g.
 function get_curr_range(file::AbstractString)
     _measurement = get_measurement(file)
 
-    _curr_range =  h5open(file) do fid
-        HDF5.attributes(fid[_measurement]["Data"])["Current Range [A]"] |> read
+    if _measurement == "OCP"
+        error("This is an Open Circuit Potential Measurement.")
+
+    elseif _measurement == "CV"
+        _curr_range =  h5open(file) do fid
+            HDF5.attributes(fid[_measurement]["Data"])["Current Range [A]"] |> read
+        end
+    else
+        _curr_range =  h5open(file) do fid
+            HDF5.attributes(fid)["Current Range [A]"] |> read
+        end
+    
+
     end
+
+    return _curr_range
+
 end
 
 
@@ -173,7 +220,9 @@ e.g.
 """
 function get_params(file::AbstractString)
     _measurement =get_measurement(file)
-    if _measurement == "CV"
+
+    
+    if match(r"\D+",_measurement).match == "CV"
 
         attributes = [
             "Sample Rate [Hz]",
@@ -183,9 +232,19 @@ function get_params(file::AbstractString)
             "Bandwidth Filter [Hz]"
         ]
 
-        values = [HDF5.attributes(h5open(file)["CV"]["Data"])[attributes[i]] |> read for i in 1:length(attributes)]
+        values = try [HDF5.attributes(h5open(file)["CV"]["Data"])[attributes[i]] |> read for i in 1:length(attributes)] catch end
+
+        if isnothing(values) == true
+            _add_attributes = [
+                "A Potential [mV]",
+                "B Potential [mV]"
+            ]
+            append!(attributes,_add_attributes)
+            values = [HDF5.attributes(h5open(file))[attributes[i]] |> read for i in 1:length(attributes)]
+        end
+
         close(h5open(file))
-        return [attributes values]
+        return Dict(attributes[i] => values[i] for i in 1:length(values))
         
 
     elseif _measurement == "OCP"
@@ -195,7 +254,7 @@ function get_params(file::AbstractString)
         value = HDF5.attributes(h5open(file)["OCP"]["Data"])[attribute] |> read
         close(h5open(file))
 
-        return [attribute value]
+        return Dict(attribute[i] => value[i] for i in 1:length(value))
 
     end
 
@@ -271,9 +330,11 @@ function ec_list(;   dir::AbstractString = "./test/Data/EC",
         filetype = last.(splitext.(last.(split.(files,"\\"))))
     end
 
-    measurements = [filetype[i] == ".h5" ? get_measurement(files[i]) : "n/A" for i in 1:length(files)]
-    scan_rates = [(filetype[i] == ".h5" && get_measurement(files[i]) == "CV") ? get_params(files[i])[2,2] : "n/A" for i in 1:length(files)]
-    _df = DataFrame(Filename = filenames, Measurement = measurements, ScanRate= scan_rates, Path=files)
+    measurements = [filetype[i] == ".h5" ? match(r"\D+",get_measurement(files[i])).match : "n/A" for i in 1:length(files)]
+    scan_rates = [(filetype[i] == ".h5" && (match(r"\D+",get_measurement(files[i])).match == "CV")) ? get_params(files[i])["Scan Rate [mV/s]"] : "n/A" for i in 1:length(files)]
+    start_potential = [(filetype[i] == ".h5" && (try get_params(files[i])["A Potential [mV]"] catch end) !== nothing) ? get_params(files[i])["A Potential [mV]"] : "n/A" for i in 1:length(files)]
+    end_potential = [(filetype[i] == ".h5" && (try get_params(files[i])["B Potential [mV]"] catch end) !== nothing) ? get_params(files[i])["B Potential [mV]"] : "n/A" for i in 1:length(files)]
+    _df = DataFrame(Filename = filenames, Measurement = measurements, ScanRate= scan_rates, A_Potential = start_potential, B_Potential = end_potential, Path=files)
 
    if show_na == false
         _df=_df[(_df.Measurement .!== "n/A"),:]
@@ -304,4 +365,5 @@ function ec_list(;   dir::AbstractString = "./test/Data/EC",
 
 end
 
-    
+
+
