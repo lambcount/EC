@@ -1,8 +1,8 @@
 struct Circuit
-    circuit_string::AbstractString
+    circuit_string::String
     circuit_dict::Dict
     components_dict::Dict
-    impedance
-    phase
-    parameter
+    impedance::Vector{ComplexF64}
+    phase::Vector{Float64}
+    parameter::Vector{Float64}
 end

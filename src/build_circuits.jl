@@ -238,11 +238,12 @@ function build_circuit(raw_circuit,p,f)
     end
     imp = series(imp)
     components_dict =  create_components_dict(components,p)
+
     return Circuit(
-        raw_circuit,          # circuit_string
-        circuit,              # circuit_dict
-        components_dict,      # components_dict with parameters
-        imp,                  # complex impedance
+        raw_circuit,           # circuit_string
+        circuit,               # circuit_dict
+        components_dict,       # components_dict with parameters
+        imp,                   # complex impedance
         imp .|> angle .|> abs, # phase
         p                      # parameter array        
     )         

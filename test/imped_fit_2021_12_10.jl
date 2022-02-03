@@ -55,10 +55,10 @@ end
 function plot_bode(df)
     p_imp = plot(xlabel="frequency [Hz]",ylabel="abs. impedance [Ω]", axis= :log)
         scatter!(df.frequency,df.impedance,label=false,marker=(5,:black))
-    p_phase = plot(xlabel="frequency [Hz]",ylabel="phase [°]", xaxis= :log)
-        scatter!(df.frequency,df.phase,xaxis=:log,marker=(5,:steelblue),ylim=(0,100))
+    #p_phase = plot(xlabel="frequency [Hz]",ylabel="phase [°]", xaxis= :log)
+    #    scatter!(df.frequency,df.phase,xaxis=:log,marker=(5,:steelblue),ylim=(0,100))
 
-        return plot(p_imp,p_phase,size = (1200,600))
+    #    return plot(p_imp,p_phase,size = (1200,600))
 end
 
 p1 = plot_bode(df)
