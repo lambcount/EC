@@ -124,14 +124,14 @@ end
 function fit_traces_for_imped(time,potential,current,meas_index,freq,amplitude; df= nothing,multiple=false)
     
     p0_pot = [
-        1e-7,
+        0.0,
         amplitude,
         freq,
         0.0
         ]
     p_lower_pot = [
         -2.0,
-        0.0,
+        -3*amplitude,
         freq - freq*0.025,
         -2π
     ]
