@@ -6,14 +6,23 @@ julia> read_imped_files("./test/Data/imped/mephisto/kl_675.CSV")
 """
 function read_imped_files(path)
     data = readdlm(path,',')
-    # Check if unit is in V or mV
-    unit = [i == "(mV)" ? 1000 : 1 for i in data[2,2:3]] 
+    # Check units
+    unit = Int64[]
+    for i in 1:3
+        if occursin("u",data[2,i])
+            push!(unit,1e6)
+        elseif occursin("m",data[2,i])
+            push!(unit,1e3)
+        else 
+            push!(unit,1)
+        end
+    end
     # Checks which lines of the file are of type data
     idx = [i for i in 1:size(data,1) if (typeof(data[i,1]) <: Number) && (data[i,3] !== Inf && data[i,3] !== -Inf) ]
     # Get the Data
-    time      = data[idx,1]
-    potential = data[idx,2] ./ unit[1]
-    current   = data[idx,3] ./ unit[2]
+    time      = data[idx,1] ./ unit[1]
+    potential = data[idx,2] ./ unit[2]
+    current   = data[idx,3] ./ unit[3]
 
     return time,potential,current
 end
