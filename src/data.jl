@@ -1,4 +1,4 @@
-using Dierckx,Statistics
+using Dierckx
 
 """
 calc_time(v::AbstractVector;Δt=1e-1) \n
