@@ -23,7 +23,3 @@ docs/site/
 # environment.
 Manifest.toml
 
-# Test folder
-test
-test/Data
-test/*.jl
