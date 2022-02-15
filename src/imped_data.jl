@@ -171,8 +171,8 @@ function fit_traces_for_imped(time,potential,current,meas_index,freq,amplitude; 
 
         pot_param_1         = [fit_potential[i].param[1] for i in 1:length(fit_potential)] |> mean
         pot_param_error_1   = [error_potential[i][1] for i in 1:length(fit_potential)] |> mean
-        pot_param_2         = [fit_potential[i].param[2] for i in 1:length(fit_potential)] |> abs |> mean
-        pot_param_error_2   = [error_potential[i][2] for i in 1:length(fit_potential)] |> abs|> mean
+        pot_param_2         = [fit_potential[i].param[2] for i in 1:length(fit_potential)] .|> abs |> mean
+        pot_param_error_2   = [error_potential[i][2] for i in 1:length(fit_potential)] .|> abs|> mean
         pot_param_3         = [fit_potential[i].param[3] for i in 1:length(fit_potential)] |> mean
         pot_param_error_3   = [error_potential[i][3] for i in 1:length(fit_potential)] |> mean
         pot_param_4         = [fit_potential[i].param[4] for i in 1:length(fit_potential)] .|> rad2deg # Mean is not useful here
@@ -221,8 +221,8 @@ function fit_traces_for_imped(time,potential,current,meas_index,freq,amplitude; 
 
         cur_param_1         = [fit_current[i].param[1] for i in 1:length(fit_current)] |> mean
         cur_param_error_1   = [error_current[i][1] for i in 1:length(fit_current)] |> mean
-        cur_param_2         = [fit_current[i].param[2] for i in 1:length(fit_current)] |> abs |> mean
-        cur_param_error_2   = [error_current[i][2] for i in 1:length(fit_current)] |> abs |> mean
+        cur_param_2         = [fit_current[i].param[2] for i in 1:length(fit_current)] .|> abs |> mean
+        cur_param_error_2   = [error_current[i][2] for i in 1:length(fit_current)] .|> abs |> mean
         cur_param_3         = [fit_current[i].param[3] for i in 1:length(fit_current)] |> mean
         cur_param_error_3   = [error_current[i][3] for i in 1:length(fit_current)] |> mean
         cur_param_4         = [fit_current[i].param[4]  for i in 1:length(fit_current)] .|> rad2deg
