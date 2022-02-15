@@ -191,7 +191,7 @@ function fit_traces_for_imped(time,potential,current,meas_index,freq,amplitude; 
     phase_potential_error              = pot_param_error_4
 
 
-    p0_cur = [pot_param_1, pot_param_2,pot_param_3,pot_param_4[1]]
+    p0_cur = [pot_param_1, pot_param_2,pot_param_3,(pot_param_4[1] |> deg2rad) ]
     
     p_lower_cur = p_lower_pot |> copy
     p_lower_cur[3] = frequency_potential- 0.01 * frequency_potential # fix frequency 
