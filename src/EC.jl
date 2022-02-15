@@ -28,7 +28,6 @@ export
     conv_circuit,
     import_oszi_imped,
     fit_traces_for_imped,
-    plot_bode,
     f_sin,
     calc_time
 end

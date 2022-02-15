@@ -162,8 +162,8 @@ function fit_traces_for_imped(time,potential,current,meas_index,freq,amplitude; 
             pot_param_error_2   = error_potential[2]
             pot_param_3         = fit_potential.param[3] 
             pot_param_error_3   = error_potential[3] 
-            pot_param_4         = fit_potential.param[4] / π * 180
-            pot_param_error_4   = error_potential[4] / π * 180
+            pot_param_4         = fit_potential.param[4] |> rad2deg
+            pot_param_error_4   = error_potential[4] |> rad2deg
 
     else
         fit_potential = [curve_fit(f_sin,time[i],potential[i],p0_pot,lower=p_lower_pot,upper=p_upper_pot) for i in 1:length(time)]
@@ -171,12 +171,12 @@ function fit_traces_for_imped(time,potential,current,meas_index,freq,amplitude; 
 
         pot_param_1         = [fit_potential[i].param[1] for i in 1:length(fit_potential)] |> mean
         pot_param_error_1   = [error_potential[i][1] for i in 1:length(fit_potential)] |> mean
-        pot_param_2         = [fit_potential[i].param[2] for i in 1:length(fit_potential)] |> mean
-        pot_param_error_2   = [error_potential[i][2] for i in 1:length(fit_potential)] |> mean
+        pot_param_2         = [fit_potential[i].param[2] for i in 1:length(fit_potential)] |> abs |> mean
+        pot_param_error_2   = [error_potential[i][2] for i in 1:length(fit_potential)] |> abs|> mean
         pot_param_3         = [fit_potential[i].param[3] for i in 1:length(fit_potential)] |> mean
         pot_param_error_3   = [error_potential[i][3] for i in 1:length(fit_potential)] |> mean
-        pot_param_4         = [fit_potential[i].param[4] / π * 180 for i in 1:length(fit_potential)] # Mean is not useful here
-        pot_param_error_4   = [error_potential[i][4] / π * 180 for i in 1:length(fit_potential)] 
+        pot_param_4         = [fit_potential[i].param[4] for i in 1:length(fit_potential)] .|> rad2deg # Mean is not useful here
+        pot_param_error_4   = [error_potential[i][4] for i in 1:length(fit_potential)] .|> rad2deg
         
     end
 
@@ -212,8 +212,8 @@ function fit_traces_for_imped(time,potential,current,meas_index,freq,amplitude; 
             cur_param_error_2   = error_current[2]
             cur_param_3         = fit_current.param[3] 
             cur_param_error_3   = error_current[3] 
-            cur_param_4         = fit_current.param[4] / π * 180
-            cur_param_error_4   = error_current[4] / π * 180
+            cur_param_4         = fit_current.param[4] |> rad2deg
+            cur_param_error_4   = error_current[4] |> rad2deg
 
     else
         fit_current = [curve_fit(f_sin,time[i],current[i],p0_cur,lower=p_lower_cur,upper=p_upper_cur) for i in 1:length(time)]
@@ -221,12 +221,12 @@ function fit_traces_for_imped(time,potential,current,meas_index,freq,amplitude; 
 
         cur_param_1         = [fit_current[i].param[1] for i in 1:length(fit_current)] |> mean
         cur_param_error_1   = [error_current[i][1] for i in 1:length(fit_current)] |> mean
-        cur_param_2         = [fit_current[i].param[2] for i in 1:length(fit_current)] |> mean
-        cur_param_error_2   = [error_current[i][2] for i in 1:length(fit_current)] |> mean
+        cur_param_2         = [fit_current[i].param[2] for i in 1:length(fit_current)] |> abs |> mean
+        cur_param_error_2   = [error_current[i][2] for i in 1:length(fit_current)] |> abs |> mean
         cur_param_3         = [fit_current[i].param[3] for i in 1:length(fit_current)] |> mean
         cur_param_error_3   = [error_current[i][3] for i in 1:length(fit_current)] |> mean
-        cur_param_4         = [fit_current[i].param[4] / π * 180 for i in 1:length(fit_current)] 
-        cur_param_error_4   = [error_current[i][4] / π * 180 for i in 1:length(fit_current)] 
+        cur_param_4         = [fit_current[i].param[4]  for i in 1:length(fit_current)] .|> rad2deg
+        cur_param_error_4   = [error_current[i][4]  for i in 1:length(fit_current)] .|> rad2deg
         
     end
 
@@ -256,12 +256,12 @@ function fit_traces_for_imped(time,potential,current,meas_index,freq,amplitude; 
     error_phase_difference = all_error_phase_difference |> mean
 
 
-    impedance_real = impedance_absolut * cos(phase_difference / 180 * π) 
-    impedance_real_error = impedance_absolut *  (cos((phase_difference + error_phase_difference) / 180 * π)  - cos((phase_difference) / 180 * π)  )  |> abs
+    impedance_real = impedance_absolut * cos(phase_difference |> deg2rad) 
+    impedance_real_error = impedance_absolut *  (cos((phase_difference + error_phase_difference) |> deg2rad)  - cos((phase_difference) |> deg2rad)  )  |> abs
     
     
-    impedance_imag = impedance_absolut * sin(phase_difference / 180 * π) 
-    impedance_imag_error =  impedance_absolut * ( sin(( phase_difference + error_phase_difference) / 180 * π)  - sin(( phase_difference ) / 180 * π)  )   |> abs
+    impedance_imag = impedance_absolut * sin(phase_difference |> deg2rad) 
+    impedance_imag_error =  impedance_absolut * ( sin(( phase_difference + error_phase_difference) |> deg2rad)  - sin(( phase_difference ) |> deg2rad)  )   |> abs
     
         imp_table = imped_table(
             meas_index,
