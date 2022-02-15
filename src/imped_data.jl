@@ -141,13 +141,13 @@ function fit_traces_for_imped(time,potential,current,meas_index,freq,amplitude; 
     p_lower_pot = [
         -2.0,
         -3*amplitude,
-        freq - freq*0.025,
+        freq - freq*0.1,
         -2π
     ]
     p_upper_pot = [
         2.0,
         3*amplitude,
-        freq + freq*0.025,
+        freq + freq*0.1,
         2π
     ]
 
@@ -194,12 +194,12 @@ function fit_traces_for_imped(time,potential,current,meas_index,freq,amplitude; 
     p0_cur = [pot_param_1, pot_param_2,pot_param_3,(pot_param_4[1] |> deg2rad) ]
     
     p_lower_cur = p_lower_pot |> copy
-    p_lower_cur[3] = frequency_potential- 0.01 * frequency_potential # fix frequency 
+    p_lower_cur[3] = frequency_potential- 0.1 * frequency_potential # fix frequency 
     p_lower_cur[4] = (phase_potential[1]  |> deg2rad ) - π # max phase difference to potental should be ±π
 
 
     p_upper_cur = p_upper_pot |> copy
-    p_upper_cur[3] = frequency_potential + 0.01 * frequency_potential 
+    p_upper_cur[3] = frequency_potential + 0.1 * frequency_potential 
     p_upper_cur[4] = (phase_potential[1] |> deg2rad)  + π
     if multiple == false
     
