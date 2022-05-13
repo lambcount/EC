@@ -1,4 +1,3 @@
-using Dierckx
 
 """
 calc_time(v::AbstractVector;Δt=1e-1) \n
@@ -13,173 +12,252 @@ end
 """
 diff(v::AbstractVector)) \n
 
-Returns a length(v)-1 array with the differences between the i and the i+1 value.
+Returns a length(v)-1 array with the differences between the i and the i-1 value.
 """
 function diff(v::AbstractVector)
-    [v[i] - v[i+1] for i in 1:length(v)-1]
+    [v[i] - v[i-1] for i in 2:length(v)]
 end
 
-function idx_cycle(v::AbstractVector;start_pot=nothing,start_idx=nothing,start_cycle  = nothing)
-    x   = collect(1:length(v))
-    smooth_v = savitzky_golay_filter(v,101,2)
-    spl_v = Spline1D(x,smooth_v,s=1e-4)
-    der= [derivative(spl_v,i) for i in x]
+"""
+    findall_localmaxima(data;samples=4) \n
+Return all local maxima in given data. Adjust kwarg "samples" to check if its noise or a local minima.
+"""
+function findall_localmaxima(data;samples=4)
+    extrema_01 = Int[]                              #make an empty Array, push all the local maxima to it, which satisfy given boolean.        
+    for i in samples+1:length(data)-samples
+        if data[i-samples]<data[i]>data[i+samples] 
+            push!(extrema_01,i)
+        end
+    end
+    diff_extrema = diff(extrema_01)                 # calc. difference to check if the maxima are real maxima or just due to noise. If its due to noise the diff should be smaller than var samples
+    extrema_02 = Int[]
+        push!(extrema_02,extrema_01[1])
+        append!(extrema_02,extrema_01[findall(x-> x>samples,diff_extrema).+1])
+    return extrema_02
+end
+
+"""
+    triangle(t,p) \n
+Simulate triangular waveforms. Inpute parameters are the time (t) and the parameters (p), where: \n
+
+    amplitude = p[1] \n
+    period    = p[2] \n
+    phase     = p[3] \n
+    offset    = p[4] \n
+
+Do not use a phase of 0, as it is divided by the phase and thus the function would only return NaN.
+"""
+function triangle(t,p)
+    A      = p[1]                       # amplitude
+    T      = p[2]                       # period
+    phase  = p[3]                       # phase
+    offset = p[4]                       # offset
+    if phase == 0                       # if the phase is 0, the function would return NaN, so now it will return unreasonable high values, which is great for fitting
+        return fill(1e10,length(t))
+    else
+    @.  4*A/T *abs((mod((t-T/phase),T))-T/2)+offset
+    end
+end
+
+"""
+    fit_voltag(voltage,Δt) \n
+
+Fit the triangular voltage data. Input parameters are the raw volatge and the sample time Δt. Function will return the fitted parameters. \n
+
+p = fit_voltag(voltage,Δt)
+
+amplitude = p[1] \n
+period    = p[2] \n
+phase     = p[3] \n
+offset    = p[4] \n
+
+triangle(t,p) will return the triangular voltage fit.
+"""
+function fit_voltage(data,Δt)
+    time     = EC.calc_time(data,Δt= Δt)                                        # calculate the measurement time from length(data) multiplied by the time increment Δt
+    A_0      = (abs(maximum(data)) + abs(minimum(data))) /2                     # get a good inital guess on the amplitude (A)
+    maxima   = findall_localmaxima(data)                                        # to get a good initial estimate for period (T), find two adjacent maxima 
+    T_0      = time[maxima[2]]-time[maxima[1]]                                  # and calculate the difference
+    phase_0  = 1e-1                                                             
+    offset_0 = maximum(data)
+    p_0      = [A_0,T_0,phase_0,offset_0]    
+    p_lb = [-2*A_0,T_0*0.9,-2pi,-10.0]                                          # maybe not needed
+    p_ub = [2*A_0,T_0*1.1,2pi,10.0]
+    fit       = curve_fit(triangle,time,data,p_0,lower=p_lb,upper=p_ub)
+     
+       return fit.param
+     
+ end
+
+"""
+    idx_cycle(data,Δt) \n
+
+    Returns the length of a cycle period, by fitting the data.
+  
+"""
+ function idx_cycle(data,Δt)
+    T_cycle = fit_voltage(data,Δt)[2]                       # We only need the period
+    T_idx_cycle = round(T_cycle/Δt,RoundUp) |> Int          # round up the length of the period
+
+    return T_idx_cycle
+end
+
+"""
+    find_nearest(A,x, tol)
+
+    Returns the argument of the closest element in A to x within a tolerence of tol.
+
+"""
+function find_nearest(A,x, tol)
+    diff = abs.(A.-x)
+    findfirst(x-> x <=tol ,diff) 
+end
+
+
+function cycle(v::AbstractVector,cycle::Int64,Δt;start_pot=nothing,start_idx=nothing,start_min  = false,tol =1e-2)
     
+    T_idx_cycle = idx_cycle(v,Δt)
+    
+    if start_pot !== nothing 
+        
+        start_pot_idx = find_nearest(v,start_pot,tol)
+        first = (cycle-1)*T_idx_cycle+start_pot_idx
+        last  =  cycle*T_idx_cycle+start_pot_idx+1
+        
+        return v[first:last]
+        
+    elseif start_idx !== nothing
+        
+        first = (cycle-1)*T_idx_cycle+start_idx
+        last  = cycle*T_idx_cycle+start_idx+1
+        
+        return v[first:last]
+        
+    elseif start_min == true
+        
+        first_min_idx = argmin(v)
+        
+        while first_min_idx > T_idx_cycle
+            first_min_idx  -= T_idx_cycle
+        end
+        
+        first = (cycle-1)*T_idx_cycle+first_min_idx
+        last  = cycle*T_idx_cycle+first_min_idx+1
+        
+        return v[first:last]
+    else
+        first = (cycle-1)*T_idx_cycle+1
+        last  = cycle*T_idx_cycle+1
+        
+        return v[first:last]
+    end
+end
 
-    if  start_cycle !== nothing
-        smooth_der = savitzky_golay_filter(der,101,2)
-        spl_der = Spline1D(x,smooth_der,s=1e-10)
-        roots_der  = roots(spl_der,maxn=100) .|> round .|> Int
+"""
+    cycle(v::AbstractVector,c::AbstractVector,cycle::Int64,Δt;start_pot=nothing,start_idx=nothing,start_min  = false,tol =1e-2)  \n
 
-        if start_cycle +2 > length(roots_der)
-            error("You cant use the start_cycle kwarg since there is no full cycle starting from the potential minimum.")
+Return the Input voltage and current Arrays for the given cycle and sample time (Δt) argument. Specify the start potential of the cycle with either the potential (start_pot) or the index (start_idx) or just start from the minimum (start_min)
+"""
+function cycle(v::AbstractVector,c::AbstractVector,cycle::Int64,Δt;start_pot=nothing,start_idx=nothing,start_min  = false,tol =1e-2)
+    
+    T_idx_cycle = idx_cycle(v,Δt)                                           # The length of a cycle always the same for a given dataset.
+    
+    if start_pot !== nothing                                                # Special Case, if you want the cycle to start a specific potential.
+        
+        start_pot_idx = find_nearest(v,start_pot,tol)                       # Find the first occurence potential of the potential in data
+        first = (cycle-1)*T_idx_cycle+start_pot_idx                         # First Index of the cycle
+        last  =  cycle*T_idx_cycle+start_pot_idx+1                          # Last Index of the cycle
+
+        n_cycles = 0                                                        # While loop for checking how many cycles there are if you start at the 
+        total_cycles = copy(first)                                          # start potential
+
+        while total_cycles+T_idx_cycle < length(v)
+            n_cycles += 1
+            total_cycles += T_idx_cycle
+        end
+        if n_cycles > cycle
+            error!("There are only $(n_cycles) cycles in this data set with the specified start potential ($(start_pot)). You selected cycle $(cycle)!")
         else
-            if v[roots_der[1]] < v[roots_der[2]]
 
-                return roots_der[start_cycle]:roots_der[start_cycle+2]
+            println("Cycle $(cycle)/$(n_cycles)")
 
-            elseif v[roots_der[1]] > v[roots_der[2]]
-                start_cycle += 1
+            return v[first:last],c[first:last]
+        end
+        
+    elseif start_idx !== nothing                                            # Special Case, if you want the cycle to start a specific index.
+        
+        first = (cycle-1)*T_idx_cycle+start_idx                             # First Index of the cycle
+        last  = cycle*T_idx_cycle+start_idx+1                               # Last Index of the cycle
 
-                return roots_der[start_cycle]:roots_der[start_cycle+2]
-            else 
-                error("The derivative of your potential does not show any roots. Try smoothing your input potential.")
-            end
+        n_cycles = 0
+        total_cycles = copy(first)
 
+        while total_cycles+T_idx_cycle < length(v)
+            n_cycles += 1
+            total_cycles += T_idx_cycle
+        end
+
+        if n_cycles > cycle
+            error!("There are only $(n_cycles) cycles in this data set with the specified argument ($(start_idx)). You selected cycle $(cycle)!")
+        else
+
+            println("Cycle $(cycle)/$(n_cycles)")
+
+            return v[first:last],c[first:last]
+        end
+        
+    elseif start_min == true                                                # Special Case, if you want the cycle to start at the lowest potential.
+        
+        first_min_idx = argmin(v)                                           # Find any minimum
+        
+        while first_min_idx > T_idx_cycle                                   # Find the argument of the lowest minimum, by substracting a full cycle
+            first_min_idx  -= T_idx_cycle                                   # from first_min_idx. Stop when first_min_idx is smaller than a full cycle
+        end
+        
+        first = (cycle-1)*T_idx_cycle+first_min_idx
+        last  = cycle*T_idx_cycle+first_min_idx+1
+
+        n_cycles = 0
+        total_cycles = copy(first)
+
+        while total_cycles+T_idx_cycle < length(v)
+            n_cycles += 1
+            total_cycles += T_idx_cycle
+        end
+
+        if n_cycles > cycle
+            error!("There are only $(n_cycles) cycles in this data set if you start from a minimum. You selected cycle $(cycle)!")
+        else
+
+            println("Cycle $(cycle)/$(n_cycles)")
+
+            return v[first:last],c[first:last]
+        end
+    else                                                                    # Normal case
+        first = (cycle-1)*T_idx_cycle+1
+        last  = cycle*T_idx_cycle+1
+
+        n_cycles = 0
+        total_cycles = copy(first)
+
+        while total_cycles+T_idx_cycle < length(v)
+            n_cycles += 1
+            total_cycles += T_idx_cycle
+        end
+
+        if n_cycles > cycle
+            error!("There are only $(n_cycles) cycles in this data set. You selected cycle $(cycle)!")
+        else
+
+            println("Cycle $(cycle)/$(n_cycles)")
+
+            return v[first:last],c[first:last]
         end
     end
-
-
-
-    if start_pot !== nothing && start_idx === nothing && start_cycle === nothing
-
-        pot_diff = v .- start_pot .|> abs
-        minstd =  diff(v) |> std
-        start_idx = 1
-
-        for i in 1:length(v) 
-            if pot_diff[i] < minstd/2
-                start_idx = i
-                break
-            end
-        end
-    elseif start_pot === nothing && start_idx === nothing && start_cycle === nothing
-        start_idx = 1
-
-    elseif start_pot === nothing && start_idx !== nothing && start_cycle === nothing
-
-        start_idx = start_idx
-    else
-        error("You cannot give a start potential and a start index as input.")
-    end
-
-    start = copy(start_idx)
-
-
-
-    if der[start_idx] < 0
-        
-        _idx=findnext(x->x>= v[start_idx],v,start_idx+1)
-
-        while _idx === nothing 
-            start_idx += 1
-            _idx=findnext(x->x>= v[start_idx],v,start_idx+1) 
-        end
-
-        idx=findnext(x->x<= v[start_idx],v,_idx+1)
-
-    elseif der[start_idx] > 0
-        _idx=findnext(x->x<= v[start_idx],v,start_idx+1)
-
-        while _idx === nothing 
-            start_idx += 1
-            _idx=findnext(x->x<= v[start_idx],v,start_idx+1)
-        end
-
-        idx=findnext(x->x>= v[start_idx],v,_idx+1)
-    end   
-    
-    return start:idx
-    
 end
 
 
-"""
-total_cycles(v::AbstractVector;Δt= 1e-1,pot=nothing,start_ind=nothing) \n
-
-Returns the total number of full cycles in v. Specify the start potential of the cycle with either the potential (pot) or the index (start_ind).
-"""
-function total_cycles(v::AbstractVector;start_pot=nothing,start_idx=nothing,start_cycle = nothing)
-
-    idx = idx_cycle(v,start_pot=start_pot,start_idx=start_idx,start_cycle = start_cycle)[end]
-    round(length(v)/idx) |> Int
-end  
 
 
-function cycle(v::AbstractVector,cycle::Int64;start_pot=nothing,start_idx=nothing,start_min  = false) 
-
-         
-    n_cycles = total_cycles(v,start_pot = start_pot, start_idx = start_idx, start_cycle = 1)
-   
-    if cycle > n_cycles
-        error("There are only $(n_cycles) full cycles in your Array.")
-    elseif start_min === true
-        range = idx_cycle(v,start_cycle=cycle)
-        return v[idx_cycle(v,start_cycle=cycle)]
-    else
-        range = idx_cycle(v,start_pot=start_pot,start_idx=start_idx)
-
-        if cycle == 1
-        
-            return v[range]
-
-        elseif cycle > 1 
-            _idx = range[end]
-            for i in 2:cycle
-                range = idx_cycle(v,start_idx=_idx)
-                _idx = range[end]
-                if i == cycle 
-                    break
-                end
-            end
-            return v[range]
-        end
-    end       
-end
 
 
-"""
-cycle(v::AbstractVector,c::AbstractVector,cycle::Int64;start_pot=nothing,start_idx=nothing,start_min  = false)  \n
-
-Return the Input voltage and current Arrays for the given cycle argument. Specify the start potential of the cycle with either the potential (start_pot) or the index (start_idx) or just start from the minimum (start_min)
-"""
-function cycle(v::AbstractVector,c::AbstractVector,cycle::Int64;start_pot=nothing,start_idx=nothing,start_min  = false) 
-
-         
-    n_cycles = total_cycles(v,start_pot = start_pot, start_idx = start_idx, start_cycle = 1)
-   
-    if cycle > n_cycles
-        error("There are only $(n_cycles) full cycles in your Array.")
-    elseif start_min === true
-        range = idx_cycle(v,start_cycle=cycle)
-        return v[range],c[range]
-    else
-        range = idx_cycle(v,start_pot=start_pot,start_idx=start_idx)
-
-        if cycle == 1
-        
-            return v[range],c[range]
-
-        elseif cycle > 1 
-            _idx = range[end]
-            for i in 2:cycle
-                range = idx_cycle(v,start_idx=_idx)
-                _idx = range[end]
-                if i == cycle 
-                    break
-                end
-            end
-            return v[range],c[range]
-        end
-    end       
-end

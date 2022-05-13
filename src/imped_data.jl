@@ -1,4 +1,4 @@
-using Optim,BlackBoxOptim
+using Optim
 """
 Returns the time,potential and current vector of the impedance file under path. Currently works with Data from Mephisto and Picosscope.
 
@@ -293,7 +293,7 @@ end
 """
 Fit Bode
 """
-function fit_bode(circuit_str,freq,imp_data,lower,upper;bbo=false,bbo_time=10,compare=false)
+function fit_bode(circuit_str,freq,imp_data,lower,upper;compare=false)
 
     function cost_function(param::Vector{Float64})
         circuit = build_circuit(circuit_str,param,freq)
@@ -301,45 +301,12 @@ function fit_bode(circuit_str,freq,imp_data,lower,upper;bbo=false,bbo_time=10,co
         minimizer_value = (circuit.impedance .|> abs) .- (imp_data .|> abs)
         sum(minimizer_value .^2)   
     end
-
-    if bbo == true 
-        param_bounds = [(lower[i],upper[i]) for i in 1:length(lower)]
-        
-        bbopt = bboptimize(
-            cost_function; 
-            SearchRange =param_bounds, 
-            NumDimensions = 2,
-            MaxTime = bbo_time, 
-            TraceMode = :compact, 
-            NThreads= Threads.nthreads()-1, 
-            Method = :random_search, 
-            lambda = 1,
-            MaxSteps=1e6
-        )
-        return build_circuit(circuit_str,bbopt.archive_output.best_candidate,freq)
-    elseif compare == true
-        param_bounds = [(lower[i],upper[i]) for i in 1:length(lower)]
-        
-        bbopt = compare_optimizers(
-            cost_function; 
-            SearchRange =param_bounds, 
-            NumDimensions = 2,
-            MaxTime = bbo_time, 
-            TraceMode = :compact, 
-            NThreads= Threads.nthreads()-1,  
-            lambda = 1,
-            MaxSteps=1e6
-        )
-
-
-    else
-
         initial_guess = [mean([lower[i],upper[i]]) for i in 1:length(lower)]
         
         optim = Optim.optimize(cost_function,lower,upper,initial_guess,Fminbox(LBFGS()))
         
         return build_circuit(circuit_str,optim.minimizer,freq)
-    end
+
 end;
     
     
