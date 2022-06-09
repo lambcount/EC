@@ -1,4 +1,4 @@
-
+using Statistics
 """
 calc_time(v::AbstractVector;Δt=1e-1) \n
 
@@ -19,20 +19,20 @@ function diff(v::AbstractVector)
 end
 
 """
-    findall_localmaxima(data;samples=4) \n
-Return all local maxima in given data. Adjust kwarg "samples" to check if its noise or a local minima.
+    findall_localmaxima(data) \n
+Return all local maxima in given data.
 """
-function findall_localmaxima(data;samples=4)
-    extrema_01 = Int[]                              #make an empty Array, push all the local maxima to it, which satisfy given boolean.        
-    for i in samples+1:length(data)-samples
-        if data[i-samples]<data[i]>data[i+samples] 
-            push!(extrema_01,i)
-        end
-    end
-    diff_extrema = diff(extrema_01)                 # calc. difference to check if the maxima are real maxima or just due to noise. If its due to noise the diff should be smaller than var samples
+function findall_localmaxima(data)
+    v_max      = maximum(data)          
+    lb_v_max   = v_max-0.01*v_max                       # Define the range, in which we are looking for all argmaxima
+    ub_v_max   = v_max+0.01*v_max 
+    extrema_01 = findall(x-> lb_v_max<=x<=ub_v_max,data)  # Find all args in the above defined range                                
+        
+    diff_extrema = diff(extrema_01)                 # calc. difference to check if the maxima are real maxima or just due to noise. If its due to noise the diff should be smaller than the std
+    std_extrema  = std(diff_extrema)                 
     extrema_02 = Int[]
-        push!(extrema_02,extrema_01[1])
-        append!(extrema_02,extrema_01[findall(x-> x>samples,diff_extrema).+1])
+        push!(extrema_02,extrema_01[2])
+        append!(extrema_02,extrema_01[findall(x-> x> std_extrema,diff_extrema).+2])
     return extrema_02
 end
 
@@ -77,12 +77,12 @@ function fit_voltage(data,Δt)
     time     = EC.calc_time(data,Δt= Δt)                                        # calculate the measurement time from length(data) multiplied by the time increment Δt
     A_0      = (abs(maximum(data)) + abs(minimum(data))) /2                     # get a good inital guess on the amplitude (A)
     maxima   = findall_localmaxima(data)                                        # to get a good initial estimate for period (T), find two adjacent maxima 
-    T_0      = time[maxima[2]]-time[maxima[1]]                                  # and calculate the difference
+    T_0      =  time[maxima[2]]-time[maxima[1]]                                  # and calculate the difference
     phase_0  = 1e-1                                                             
     offset_0 = maximum(data)
     p_0      = [A_0,T_0,phase_0,offset_0]    
-    p_lb = [-2*A_0,T_0*0.9,-2pi,-10.0]                                          # maybe not needed
-    p_ub = [2*A_0,T_0*1.1,2pi,10.0]
+    p_lb = [0.0,T_0*0.5,-2pi,-10.0]                                          # maybe not needed
+    p_ub = [2*A_0,T_0*1.5,2pi,10.0]
     fit       = curve_fit(triangle,time,data,p_0,lower=p_lb,upper=p_ub)
      
        return fit.param
@@ -160,7 +160,8 @@ Return the Input voltage and current Arrays for the given cycle and sample time 
 """
 function cycle(v::AbstractVector,c::AbstractVector,cycle::Int64,Δt;start_pot=nothing,start_idx=nothing,start_min  = false,tol =1e-2)
     
-    T_idx_cycle = idx_cycle(v,Δt)                                           # The length of a cycle always the same for a given dataset.
+    T_idx_cycle = idx_cycle(v,Δt)    
+    println("index per cycle $(T_idx_cycle)")                                       # The length of a cycle always the same for a given dataset.
     
     if start_pot !== nothing                                                # Special Case, if you want the cycle to start a specific potential.
         
@@ -175,8 +176,8 @@ function cycle(v::AbstractVector,c::AbstractVector,cycle::Int64,Δt;start_pot=no
             n_cycles += 1
             total_cycles += T_idx_cycle
         end
-        if n_cycles > cycle
-            error!("There are only $(n_cycles) cycles in this data set with the specified start potential ($(start_pot)). You selected cycle $(cycle)!")
+        if n_cycles < cycle
+            error("There are only $(n_cycles) cycles in this data set with the specified start potential ($(start_pot)). You selected cycle $(cycle)!")
         else
 
             println("Cycle $(cycle)/$(n_cycles)")
@@ -197,8 +198,8 @@ function cycle(v::AbstractVector,c::AbstractVector,cycle::Int64,Δt;start_pot=no
             total_cycles += T_idx_cycle
         end
 
-        if n_cycles > cycle
-            error!("There are only $(n_cycles) cycles in this data set with the specified argument ($(start_idx)). You selected cycle $(cycle)!")
+        if n_cycles < cycle
+            error("There are only $(n_cycles) cycles in this data set with the specified argument ($(start_idx)). You selected cycle $(cycle)!")
         else
 
             println("Cycle $(cycle)/$(n_cycles)")
@@ -225,8 +226,8 @@ function cycle(v::AbstractVector,c::AbstractVector,cycle::Int64,Δt;start_pot=no
             total_cycles += T_idx_cycle
         end
 
-        if n_cycles > cycle
-            error!("There are only $(n_cycles) cycles in this data set if you start from a minimum. You selected cycle $(cycle)!")
+        if n_cycles < cycle
+            error("There are only $(n_cycles) cycles in this data set if you start from a minimum. You selected cycle $(cycle)!")
         else
 
             println("Cycle $(cycle)/$(n_cycles)")
@@ -245,8 +246,8 @@ function cycle(v::AbstractVector,c::AbstractVector,cycle::Int64,Δt;start_pot=no
             total_cycles += T_idx_cycle
         end
 
-        if n_cycles > cycle
-            error!("There are only $(n_cycles) cycles in this data set. You selected cycle $(cycle)!")
+        if n_cycles < cycle
+            error("There are only $(n_cycles) cycles in this data set. You selected cycle $(cycle)!")
         else
 
             println("Cycle $(cycle)/$(n_cycles)")
