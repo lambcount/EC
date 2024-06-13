@@ -278,8 +278,8 @@ function get_params(file::AbstractString)
         value = HDF5.attributes(h5open(file)[_measurement]["Voltage"])[attribute] |> read
         close(h5open(file))
 
-        return Dict(attribute[i] => value[i] for i in 1:length(value))
-            
+        values = try [HDF5.attributes(h5open(file)[_measurement]["Voltage"])[attributes[i]] |> read for i in 1:length(attributes)] catch end
+
 
     end
 
