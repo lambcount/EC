@@ -85,8 +85,18 @@ function ec_grab(_measurement::AbstractString; dir::AbstractString = "./test/Dat
 
                         return _volt,_curr
                     end
+                elseif _measurement == "OCP Pump-Probe"
 
-                    end                       
+                    _volt = h5open(files[idx_file]) do fid
+                        read(fid[_measurement]["Voltage"])
+                    end
+                    _positions = h5open(files[idx_file]) do fid
+                        read(fid[_measurement]["SHBC Positions"])
+                    end
+
+                    return _volt,_positions
+
+                end                       
                 
             elseif fileext[idx_file] == ".csv"
                 data = readdlm(files[idx_file])
@@ -255,6 +265,21 @@ function get_params(file::AbstractString)
         close(h5open(file))
 
         return Dict(attribute[i] => value[i] for i in 1:length(value))
+
+    elseif _measurement == "OCP Pump-Probe"
+
+        attributes = [
+            "Sample Rate [Hz]",
+            "Time [s]",
+            "Reference Position",
+            "Comment",
+        ]
+
+        value = HDF5.attributes(h5open(file)[_measurement]["Voltage"])[attribute] |> read
+        close(h5open(file))
+
+        return Dict(attribute[i] => value[i] for i in 1:length(value))
+            
 
     end
 
