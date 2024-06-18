@@ -93,8 +93,11 @@ function ec_grab(_measurement::AbstractString; dir::AbstractString = "./test/Dat
                     _positions = h5open(files[idx_file]) do fid
                         read(fid[_measurement]["SHBC Positions"])
                     end
+                    _power = h5open(files[idx_file]) do fid
+                        read(fid[_measurement]["IR Power"])
+                    end
 
-                    return _volt,_positions
+                    return _volt,_positions,_power
 
                 end                       
                 
