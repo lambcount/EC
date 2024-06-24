@@ -93,12 +93,16 @@ function ec_grab(_measurement::AbstractString; dir::AbstractString = "./test/Dat
                     _positions = h5open(files[idx_file]) do fid
                         read(fid[_measurement]["SHBC Positions"])
                     end
-                    _power = h5open(files[idx_file]) do fid
-                        read(fid[_measurement]["IR Power"])
+                    if haskey(h5open(files[idx_file])[_measurement],"IR Power") == true
+                        _power = h5open(files[idx_file]) do fid
+                            read(fid[_measurement]["IR Power"])
+                        end
+                        return _volt,_positions,_power
+                    else 
+                        return _volt,_positions
+
+
                     end
-
-                    return _volt,_positions,_power
-
                 end                       
                 
             elseif fileext[idx_file] == ".csv"
